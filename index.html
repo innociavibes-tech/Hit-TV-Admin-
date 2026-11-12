@@ -1,43 +1,74 @@
 <!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Hit TV Admin</title><style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:Arial}body{background:#0A1628;color:#fff;padding:14px;padding-bottom:30px}
 .logo{font-weight:900;font-size:22px}.logo span{color:#2E7DFF}.card{background:#122A4F;padding:16px;border-radius:16px;margin:12px 0;border:1px solid #1E3A6E}
-input,textarea,select{width:100%;padding:12px;margin:6px 0;border-radius:10px;background:#0A1628;color:#fff;border:1px solid #1E3A6E}
+input,textarea{width:100%;padding:12px;margin:6px 0;border-radius:10px;background:#0A1628;color:#fff;border:1px solid #1E3A6E}
 button{background:#2E7DFF;color:#fff;border:none;padding:12px 18px;border-radius:10px;font-weight:800;margin-top:6px}
 .saveBtn{width:100%;background:#00D68F;color:#000;padding:15px;border-radius:14px;font-weight:900;font-size:16px}
-.inbox-item{background:#0B1D3A;padding:12px;margin:8px 0;border-radius:12px}
-#loginBox{text-align:center;margin-top:80px}.sub{color:#8A9BB5;margin:6px 0 12px}
+.inbox-item{background:#0B1D3A;padding:12px;margin:8px 0;border-radius:12px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.small{color:#8A9BB5;font-size:13px} .uploadBtn{background:#1E3A6E;border:1px dashed #2E7DFF;width:100%;padding:18px}
+.stopBtn{background:#E50914} .playBtn{background:#00D68F;color:#000}
+img.preview{width:100%;border-radius:12px;margin-top:8px}
 </style></head><body>
-<div id="loginBox"><div class="logo">HIT <span>TV</span> ADMIN</div><p class="sub">Only Admin can enter</p><input id="pass" type="password" placeholder="Enter Admin Password" style="max-width:320px;"><br><button onclick="login()">Enter Admin</button><p id="loginMsg" style="color:#FF4444;margin-top:10px;"></p></div>
-<div id="adminBox" style="display:none;">
-<div class="logo">HIT <span>TV</span> ADMIN</div><p class="sub">What you set here shows in Viewer App instantly.</p>
-<div class="card"><h3>1. Main Live Stream</h3><input id="liveTitle" placeholder="Live Title"><input id="liveDesc" placeholder="Live Description"><input id="liveUrl" placeholder="Live Video URL m3u8 / mp4"></div>
-<div class="card"><h3>2. Channels - One per line: Name | Desc | URL</h3><textarea id="channels" rows="5"></textarea></div>
-<div class="card"><h3>3. Inbox Message</h3><input id="inboxMsg" placeholder="New message"><button onclick="addInbox()">Add Inbox</button></div>
-<div class="card"><h3>4. Banner Image URL</h3><input id="bannerUrl" placeholder="https://..."><button onclick="addBanner()">Add Banner</button></div>
-<div class="card"><h3>5. Audio Song</h3><input id="songTitle" placeholder="Song Title"><input id="songArtist" placeholder="Artist"><input id="songUrl" placeholder="MP3 Link"><button onclick="addSong()">Add Song</button></div>
-<button class="saveBtn" onclick="saveAll()">SAVE ALL - UPDATE VIEWER APP</button><p id="saveMsg" style="color:#00D68F;font-weight:700;margin-top:10px;"></p>
+<div id="loginBox" style="text-align:center;margin-top:80px"><div class="logo">HIT <span>TV</span> ADMIN</div><p class="small">Only Admin</p><input id="pass" type="password" placeholder="Enter Password" style="max-width:320px"><br><button onclick="login()">Enter Admin</button><p id="loginMsg" style="color:#FF4444"></p></div>
+<div id="adminBox" style="display:none">
+<div class="logo">HIT <span>TV</span> ADMIN</div><p class="small">Upload from your phone. No links.</p>
+
+<div class="card"><h3>1. Main Live Title</h3><input id="liveTitle" placeholder="Live Title"><input id="liveDesc" placeholder="Live Description"></div>
+
+<div class="card"><h3>2. Programmes - NOT Channels</h3><p class="small">Type Programme, tap Add Programme</p><input id="progName" placeholder="Programme Name e.g. Morning Show"><input id="progTime" placeholder="Time e.g. 7:00 AM - 9:00 AM"><button onclick="addProgramme()">Add Programme</button><div id="progList"></div></div>
+
+<div class="card"><h3>3. Banner Photo - Upload From Phone</h3><input type="file" id="bannerFile" accept="image/*" style="display:none" onchange="uploadBanner(this)"><button class="uploadBtn" onclick="document.getElementById('bannerFile').click()">+ Pick Banner Photo From Files</button><div id="bannerPreview"></div></div>
+
+<div class="card"><h3>4. Inbox Message</h3><input id="inboxMsg" placeholder="Message to viewers"><button onclick="addInbox()">Add Inbox</button></div>
+
+<div class="card"><h3>5. LINE UP - Upload Song From Phone</h3><p class="small">Pick MP3, it goes to Line Up in order</p><input id="songTitle" placeholder="Song Title"><input id="songArtist" placeholder="Artist Name"><input type="file" id="songFile" accept="audio/*" style="display:none" onchange="uploadSong(this)"><button class="uploadBtn" onclick="document.getElementById('songFile').click()">+ Pick Song MP3 From Files</button><p id="songStatus" class="small"></p><div id="lineupList"></div></div>
+
+<button class="saveBtn" onclick="saveAll()">SAVE ALL - UPDATE VIEWER APP</button><p id="saveMsg" style="color:#00D68F;font-weight:700;margin-top:10px"></p>
 <div class="card"><h3>Artist Submissions</h3><div id="artistList">Loading...</div></div>
 </div>
 <script>
 const DB="https://hit-tv-app-40fb9-default-rtdb.firebaseio.com";
-let cfg={liveTitle:"Hit TV Live",liveDesc:"Live",liveUrl:"https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8",channels:[],inbox:[],banners:[],songs:[]};
+let cfg={liveTitle:"Hit TV Live",liveDesc:"Live",liveUrl:"",programmes:[],inbox:[],banners:[],songs:[],nowPlaying:-1};
 function login(){ if(document.getElementById('pass').value==="HitAdmin2026"){ document.getElementById('loginBox').style.display='none'; document.getElementById('adminBox').style.display='block'; load(); } else { document.getElementById('loginMsg').innerText='Wrong password'; } }
 async function load(){
   try{ const r=await fetch(DB+"/config.json"); const d=await r.json(); if(d) cfg=d; }catch(e){}
-  document.getElementById('liveTitle').value=cfg.liveTitle; document.getElementById('liveDesc').value=cfg.liveDesc; document.getElementById('liveUrl').value=cfg.liveUrl;
-  document.getElementById('channels').value=cfg.channels.map(c=>`${c.name} | ${c.desc} | ${c.url}`).join('\n');
+  if(!cfg.programmes) cfg.programmes=[]; if(!cfg.songs) cfg.songs=[]; if(!cfg.banners) cfg.banners=[]; if(!cfg.inbox) cfg.inbox=[];
+  document.getElementById('liveTitle').value=cfg.liveTitle; document.getElementById('liveDesc').value=cfg.liveDesc;
+  renderAll();
   const ar=await fetch(DB+"/artists.json"); const ad=await ar.json();
-  const list=document.getElementById('artistList');
-  if(!ad){ list.innerHTML='No submissions yet'; return; }
-  list.innerHTML=Object.values(ad).map(s=>`<div class="inbox-item"><b>${s.artist}</b> - ${s.song}<br><small>${s.phone} | ${s.location} | ${s.genre}<br>${s.msg} | <a href="${s.link}" style="color:#2E7DFF;">Song Link</a></small></div>`).join('');
+  document.getElementById('artistList').innerHTML = !ad ? 'No submissions yet' : Object.values(ad).map(s=>`<div class="inbox-item"><div><b>${s.artist}</b> - ${s.song}<br><small>${s.phone} | ${s.location}</small></div></div>`).join('');
+}
+function renderAll(){
+  document.getElementById('progList').innerHTML = cfg.programmes.map((p,i)=>`<div class="inbox-item"><div><b>${p.name}</b><br><small>${p.time}</small></div><button class="stopBtn" onclick="delProg(${i})">Delete</button></div>`).join('') || 'No programmes yet';
+  document.getElementById('bannerPreview').innerHTML = cfg.banners.map((b,i)=>`<img class="preview" src="${b}"><button class="stopBtn" onclick="delBanner(${i})">Delete Banner</button>`).join('');
+  document.getElementById('lineupList').innerHTML = cfg.songs.map((s,i)=>`<div class="inbox-item"><div><b>${i+1}. ${s.title}</b><br><small>${s.artist} ${cfg.nowPlaying===i?' - NOW PLAYING':''}</small></div><div><button class="${cfg.nowPlaying===i?'stopBtn':'playBtn'}" onclick="togglePlay(${i})">${cfg.nowPlaying===i?'STOP':'PLAY'}</button> <button class="stopBtn" onclick="delSong(${i})">X</button></div></div>`).join('') || 'Line Up empty';
+}
+function addProgramme(){ const n=document.getElementById('progName').value; const t=document.getElementById('progTime').value; if(!n) return; cfg.programmes.push({name:n,time:t}); document.getElementById('progName').value=''; document.getElementById('progTime').value=''; renderAll(); alert('Programme added, tap SAVE ALL'); }
+function delProg(i){ cfg.programmes.splice(i,1); renderAll(); }
+function delBanner(i){ cfg.banners.splice(i,1); renderAll(); }
+function delSong(i){ cfg.songs.splice(i,1); if(cfg.nowPlaying===i) cfg.nowPlaying=-1; renderAll(); }
+function togglePlay(i){ cfg.nowPlaying = (cfg.nowPlaying===i ? -1 : i); renderAll(); alert(cfg.nowPlaying===-1 ? 'Stopped. Viewer will see Stopped.' : 'Now Playing: '+cfg.songs[i].title); }
+function addInbox(){ const m=document.getElementById('inboxMsg').value; if(!m) return; cfg.inbox.unshift({from:"Hit TV Admin",msg:m,time:"Now"}); document.getElementById('inboxMsg').value=''; alert('Inbox added, tap SAVE ALL'); }
+// FILE UPLOAD - No links, base64 from phone
+function uploadBanner(input){
+  const file=input.files[0]; if(!file) return;
+  const reader=new FileReader(); reader.onload=e=>{ cfg.banners.push(e.target.result); renderAll(); alert('Banner photo uploaded, tap SAVE ALL'); }; reader.readAsDataURL(file);
+}
+function uploadSong(input){
+  const file=input.files[0]; if(!file) return;
+  document.getElementById('songStatus').innerText='Uploading '+file.name+'... please wait';
+  const reader=new FileReader(); reader.onload=e=>{
+    const t=document.getElementById('songTitle').value || file.name;
+    const a=document.getElementById('songArtist').value || 'Hit TV';
+    cfg.songs.push({title:t,artist:a,src:e.target.result});
+    document.getElementById('songStatus').innerText='Uploaded: '+t+' - Tap SAVE ALL';
+    document.getElementById('songTitle').value=''; document.getElementById('songArtist').value='';
+    renderAll();
+  }; reader.readAsDataURL(file);
 }
 async function saveAll(){
-  cfg.liveTitle=document.getElementById('liveTitle').value; cfg.liveDesc=document.getElementById('liveDesc').value; cfg.liveUrl=document.getElementById('liveUrl').value;
-  cfg.channels=document.getElementById('channels').value.split('\n').filter(l=>l.trim()).map(l=>{ const p=l.split('|'); return {name:p[0].trim(), desc:(p[1]||'').trim(), url:(p[2]||'').trim()}; });
+  cfg.liveTitle=document.getElementById('liveTitle').value; cfg.liveDesc=document.getElementById('liveDesc').value;
   await fetch(DB+"/config.json",{method:"PUT", body:JSON.stringify(cfg)});
-  document.getElementById('saveMsg').innerText='Saved! Viewer app updated instantly.';
+  document.getElementById('saveMsg').innerText='Saved! Viewer App updated - Line Up + Banner + Programmes live.';
 }
-function addInbox(){ const m=document.getElementById('inboxMsg').value; if(!m) return; cfg.inbox.unshift({from:"Hit TV Admin", msg:m, time:"Now"}); alert('Inbox added, tap SAVE ALL'); }
-function addBanner(){ const b=document.getElementById('bannerUrl').value; if(!b) return; cfg.banners.push(b); alert('Banner added, tap SAVE ALL'); }
-function addSong(){ const t=document.getElementById('songTitle').value; const a=document.getElementById('songArtist').value; const u=document.getElementById('songUrl').value; if(!t||!u) return; cfg.songs.push({title:t, artist:a, src:u}); alert('Song added, tap SAVE ALL'); }
 </script></body></html>

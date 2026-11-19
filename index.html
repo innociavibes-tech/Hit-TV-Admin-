@@ -7,11 +7,6 @@
 <div id="tab-main" class="tab active">
 <h2>Live Control</h2>
 <div class="flex"><button class="green" onclick="setLive('play')">PLAY LIVE</button><button class="red" onclick="setLive('stop')">STOP LIVE</button></div>
-<p>Now Playing Details - Shows on Viewers App:</p>
-<input id="nowTitle" placeholder="Title e.g Inno - Hit Song">
-<input id="nowArtist" placeholder="Artist Name">
-<input id="nowDesc" placeholder="Details about video playing">
-<button class="blue" onclick="saveNow()">Save Now Playing Details</button>
 <h2>Ticker - Words On Live Video</h2>
 <input id="tickerText" placeholder="e.g Welcome to Hit TV...">
 <button onclick="saveTicker()">Update Ticker For Viewers</button>
@@ -51,24 +46,25 @@ firebase.initializeApp(firebaseConfig); const db=firebase.firestore(); const sto
 function showTab(t){document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active')); document.getElementById('tab-'+t).classList.add('active'); document.getElementById('btnMain').classList.toggle('active',t==='main'); document.getElementById('btnOthers').classList.toggle('active',t==='others');}
 function detect(url){return (url.includes('youtube')||url.includes('youtu.be'))?'youtube':'mp4';}
 async function setLive(s){try{await db.collection('hitTV').doc('live').set({status:s,updated:Date.now()},{merge:true}); alert(s==='play'?'LIVE STARTED':'LIVE STOPPED');}catch(e){alert('LIVE FAILED: '+e.message);}}
-async function saveNow(){try{await db.collection('hitTV').doc('live').set({title:document.getElementById('nowTitle').value,artist:document.getElementById('nowArtist').value,desc:document.getElementById('nowDesc').value},{merge:true}); alert('Now Playing Saved');}catch(e){alert('SAVE FAILED: '+e.message);}}
 async function saveTicker(){try{let t=document.getElementById('tickerText').value; if(!t) return alert('Type ticker first'); await db.collection('hitTV').doc('live').set({ticker:t},{merge:true}); document.getElementById('tickerBar').textContent=t; alert('Ticker SENT to Viewers: '+t);}catch(e){alert('TICKER FAILED: '+e.message);}}
 async function addVideo(){try{let title=document.getElementById('vTitle').value,artist=document.getElementById('vArtist').value,url=document.getElementById('vUrl').value,audio=document.getElementById('vAudio').value; if(!title||!url) return alert('Fill Title + Link'); await db.collection('hitTV_queue').add({title,artist:artist||'Hit TV',url,type:detect(url),audio:audio||url,created:Date.now()}); alert('Added to Line-Up - Now press PLAY THIS NOW on it'); document.getElementById('vTitle').value='';document.getElementById('vUrl').value='';}catch(e){alert('ADD FAILED: '+e.message);}}
 async function addProgram(){try{let title=document.getElementById('pTitle').value,url=document.getElementById('pUrl').value,time=document.getElementById('pTime').value; if(!title||!url||!time) return alert('Fill all'); await db.collection('hitTV_programs').add({title,url,type:detect(url),time,created:Date.now()}); alert('Program Set for '+time+' EAT');}catch(e){alert('PROGRAM FAILED: '+e.message);}}
 async function addAudio(){try{let title=document.getElementById('aTitle').value,artist=document.getElementById('aArtist').value,url=document.getElementById('aUrl').value; let file=document.getElementById('aFile').files[0]; if(file){let ref=storage.ref('audio/'+Date.now()+'_'+file.name); await ref.put(file); url=await ref.getDownloadURL();} if(!title||!url) return alert('Fill Title + MP3 Link or Choose File'); await db.collection('hitTV_audio').add({title,artist:artist||'Hit TV',url,created:Date.now()}); alert('Audio Added');}catch(e){alert('AUDIO FAILED: '+e.message);}}
 async function sendNotif(){try{let title=document.getElementById('nTitle').value,text=document.getElementById('nText').value; if(!title||!text) return alert('Fill Title + Message'); await db.collection('hitTV_notif').add({title,text,time:Date.now()}); alert('Notification SENT to all Viewers: '+title); document.getElementById('nTitle').value=''; document.getElementById('nText').value='';}catch(e){alert('NOTIF FAILED: '+e.message);}}
 async function del(coll,id){if(confirm('Delete?')){try{await db.collection(coll).doc(id).delete();}catch(e){alert('DELETE FAILED: '+e.message);}}}
-// FIXED: Play by ID only - no broken JSON in button
+// PLAY THIS NOW - FIXED V2 - ID ONLY, NO BROKEN JSON, WITH STEP ALERTS
 async function playNow(id){
+  alert('Step 1: Finding video...');
   try{
     let doc=await db.collection('hitTV_queue').doc(id).get();
-    if(!doc.exists) return alert('Video not found - refresh Admin');
+    if(!doc.exists){ alert('Step 1 FAILED: Video not found - Refresh Admin'); return; }
     let v=doc.data();
-    await db.collection('hitTV').doc('live').set({status:'play',camera:false,mode:'queue',url:v.url,link:v.url,title:v.title,artist:v.artist,type:v.type,audio:v.audio||v.url,force:Date.now(),currentId:id},{merge:true});
-    alert('NOW PLAYING on Viewers: '+v.title);
+    alert('Step 2: Found '+v.title+' - Sending to Viewers...');
+    let force=Date.now();
+    await db.collection('hitTV').doc('live').set({status:'play',camera:false,mode:'queue',url:v.url,link:v.url,title:v.title,artist:v.artist||'Hit TV',desc:v.artist||'',type:v.type||detect(v.url||''),audio:v.audio||v.url,force:force,currentId:id,updated:force},{merge:true});
+    alert('Step 3 DONE: NOW PLAYING on Viewers: '+v.title+' - Open Viewers NOW');
   }catch(e){alert('PLAY FAILED: '+e.message);}
 }
-// FIXED: Approve by ID only
 async function approveArtist(id){
   try{
     let doc=await db.collection('hitTV_artist').doc(id).get();
@@ -81,12 +77,11 @@ async function approveArtist(id){
   }catch(e){alert('APPROVE FAILED: '+e.message);}
 }
 async function replyComment(id,name){let txt=prompt('Reply to '+name+':'); if(!txt) return; try{await db.collection('hitTV_notif').add({title:'Admin Reply to '+name,text:txt,time:Date.now()}); alert('Reply sent');}catch(e){alert('REPLY FAILED: '+e.message);}}
-// FIXED: No orderBy - orderBy was making Line-Up empty if one video has no created field
 db.collection('hitTV_queue').onSnapshot(s=>{document.getElementById('queueBox').innerHTML=s.empty?'<p>Empty</p>':s.docs.map(d=>{let v=d.data(); return `<div class="card"><b>${v.title}</b><br><span class="small">${v.artist} - ${v.type}</span><br><span class="small">${v.url}</span><div class="flex"><button class="green" onclick="playNow('${d.id}')">▶ PLAY THIS NOW</button></div><button class="red" onclick="del('hitTV_queue','${d.id}')">Delete From Line-Up</button></div>`}).join('');},e=>{document.getElementById('queueBox').innerHTML='Error: '+e.message;});
 db.collection('hitTV_programs').onSnapshot(s=>{document.getElementById('programBox').innerHTML=s.empty?'<p>No programs</p>':s.docs.map(d=>{let p=d.data(); return `<div class="card"><b>${p.title} - ${p.time} EAT</b><br><span class="small">${p.url}</span><button class="red" onclick="del('hitTV_programs','${d.id}')">Delete Program</button></div>`}).join('');});
 db.collection('hitTV_audio').onSnapshot(s=>{document.getElementById('audioBox').innerHTML=s.docs.map(d=>{let a=d.data(); return `<div class="card"><b>${a.title} - ${a.artist}</b><button class="red" onclick="del('hitTV_audio','${d.id}')">Delete Audio</button></div>`}).join('');});
 db.collection('hitTV_artist').onSnapshot(s=>{document.getElementById('artistBox').innerHTML=s.empty?'<p>No submissions</p>':s.docs.map(d=>{let a=d.data(); return `<div class="card"><b>${a.name} - ${a.title}</b><br><span class="small">Phone: ${a.phone||''} - Link: ${a.link}</span><div class="flex"><button class="green" onclick="approveArtist('${d.id}')">Approve</button><button class="red" onclick="del('hitTV_artist','${d.id}')">Reject</button></div></div>`}).join('');});
-db.collection('hitTV_comments').orderBy('time','desc').limit(30).onSnapshot(s=>{document.getElementById('commentBox').innerHTML=s.docs.map(d=>{let c=d.data(); return `<div class="card"><b>${c.name}</b><br>${c.text}<button class="blue" onclick="replyComment('${d.id}','${(c.name||'').replace(/'/g,'')}')">Reply To User</button></div>`}).join('')||'<p>No comments</p>';});
+db.collection('hitTV_comments').onSnapshot(s=>{let arr=s.docs.map(d=>d.data()).sort((a,b)=>(b.time||0)-(a.time||0)).slice(0,30); document.getElementById('commentBox').innerHTML=arr.map(c=>`<div class="card"><b>${c.name}</b><br>${c.text}</div>`).join('')||'<p>No comments</p>';});
 db.collection('hitTV_users').onSnapshot(s=>{document.getElementById('usersBox').innerHTML=s.docs.map(d=>{let u=d.data(); let online=(Date.now()-u.lastSeen<60000)?'🟢 ONLINE':'⚪ Last seen '+new Date(u.lastSeen).toLocaleTimeString('en-GB',{timeZone:'Africa/Kampala'}); return `<div class="card"><b>${u.name}</b><br><span class="small">${online}</span></div>`}).join('')||'<p>No users yet</p>';});
 db.collection('hitTV').doc('live').onSnapshot(d=>{if(d.exists){let v=d.data(); document.getElementById('adminStatus').textContent='Firebase Connected - Live: '+(v.status||'play'); if(v.ticker) document.getElementById('tickerBar').textContent=v.ticker;}});
 let stream=null;

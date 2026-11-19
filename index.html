@@ -1,192 +1,93 @@
 <!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Hit TV Admin</title>
-<style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:Arial}body{background:#0a1628;color:#fff;padding:14px;padding-bottom:40px}
-h2{margin-bottom:10px}.card{background:#12233f;padding:14px;border-radius:12px;margin-bottom:14px}
-.field{width:100%;background:#0a1628;border:1px solid #2a4a6f;color:#fff;padding:11px;border-radius:8px;margin-bottom:9px}
-button{border:0;padding:11px 14px;border-radius:8px;font-weight:900;color:#fff;cursor:pointer}
-.btn-blue{background:#00aaff}.btn-green{background:#00cc66}.btn-red{background:#ff2222}.btn-orange{background:#ffaa00}.btn-purple{background:#7b2fff}
-.sub{border:1px solid #2a4a6f;padding:12px;border-radius:10px;margin-bottom:10px;background:#0a1628}.sub b{font-size:14px}.sub p{font-size:12px;color:#aaa;margin:4px 0}
-.flex{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
-.line-item{display:flex;justify-content:space-between;align-items:center;gap:8px;border:1px solid #2a4a6f;padding:10px;border-radius:10px;margin-bottom:8px;background:#0a1628}
-.num{background:#00aaff;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;flex-shrink:0}
-.user-row{display:flex;justify-content:space-between;align-items:center;gap:8px;border:1px solid #2a4a6f;padding:11px;border-radius:10px;margin-bottom:8px;background:#0a1628}
-.user-avatar{width:40px;height:40px;border-radius:50%;background:#00aaff;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:18px;flex-shrink:0}
-.live-dot{width:10px;height:10px;background:#00ff88;border-radius:50%;display:inline-block}
-/* PASSWORD GATE */
-#lock{position:fixed;top:0;left:0;right:0;bottom:0;background:#0a1628;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center}
-.lock-card{background:#12233f;width:100%;max-width:340px;padding:22px;border-radius:14px}
-.lock-input{width:100%;background:#0a1628;border:1px solid #2a4a6f;color:#fff;padding:14px;border-radius:10px;text-align:center;font-size:18px;letter-spacing:4px;margin:14px 0}
-</style>
-</head>
-<body>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Hit TV Admin</title>
+<style>*{box-sizing:border-box}body{margin:0;font-family:Arial;background:#0a1931;color:#fff;padding:12px;padding-bottom:90px}h1{font-size:24px}h2{border-bottom:1px solid #2a4a7a;padding-bottom:6px}input,select,textarea{width:100%;padding:13px;margin:6px 0;border:0;border-radius:12px;font-size:15px}button{width:100%;padding:13px;border:0;border-radius:12px;background:#fff;color:#0a1931;font-weight:800;margin:6px 0}button.green{background:#00c853;color:#fff}button.red{background:#ff3b30;color:#fff}button.blue{background:#2196f3;color:#fff}.card{background:#162a4a;padding:12px;border-radius:14px;margin:10px 0}.small{font-size:12px;color:#ccc}.flex{display:flex;gap:6px}.flex button{flex:1}.tab{display:none}.tab.active{display:block}nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:#000;padding:8px;gap:5px}nav button{flex:1;background:transparent;color:#aaa}nav button.active{background:#fff;color:#000}#tickerBar{background:#ffcc00;color:#000;padding:10px;border-radius:10px;font-weight:700;margin:10px 0}#camPreview{width:100%;border-radius:12px;display:none;background:#000}</style>
+</head><body>
+<h1>Hit TV - ADMIN PANEL</h1><p id="adminStatus">Connecting to Firebase...</p>
 
-<!-- ADMIN PASSWORD - NEW -->
-<div id="lock">
-  <div style="font-weight:900;font-size:42px">HIT <span style="color:#00aaff">TV</span> ADMIN</div>
-  <div class="lock-card">
-    <b>Admin Only 🔒</b>
-    <p style="font-size:12px;color:#aaa;margin-top:6px">Enter Admin Password to open Admin Panel</p>
-    <input id="adminPass" type="password" class="lock-input" placeholder="••••" maxlength="10">
-    <button class="btn-blue" style="width:100%;padding:14px" onclick="unlockAdmin()">UNLOCK ADMIN →</button>
-    <p id="lockMsg" style="font-size:12px;color:#ff5555;margin-top:10px"></p>
-    <p style="font-size:11px;color:#666;margin-top:12px">Default Password: <b style="color:#fff">1234</b><br>Change it below after you login, in Admin Settings.</p>
-  </div>
+<nav><button id="btnMain" class="active" onclick="showTab('main')">Main</button><button id="btnOthers" onclick="showTab('others')">Others</button></nav>
+
+<!-- MAIN TAB -->
+<div id="tab-main" class="tab active">
+<h2>Live Control</h2>
+<div class="flex"><button class="green" onclick="setLive('play')">PLAY LIVE</button><button class="red" onclick="setLive('stop')">STOP LIVE</button></div>
+<p>Now Playing Details - Shows on Viewers App:</p>
+<input id="nowTitle" placeholder="Title e.g Inno - Hit Song">
+<input id="nowArtist" placeholder="Artist Name">
+<input id="nowDesc" placeholder="Details about video playing">
+<button class="blue" onclick="saveNow()">Save Now Playing Details</button>
+
+<h2>Ticker - Words On Live Video</h2>
+<input id="tickerText" placeholder="e.g Welcome to Hit TV - Send your song requests...">
+<button onclick="saveTicker()">Update Ticker For Viewers</button>
+<div id="tickerBar">Ticker will show here</div>
+
+<h2>Camera - Go Live With Your Camera</h2>
+<video id="camPreview" autoplay muted playsinline></video>
+<div class="flex"><button class="blue" onclick="startCamera()">Start Camera</button><button class="red" onclick="stopCamera()">Stop Camera</button></div>
+<p class="small">When Camera is ON, viewers see LIVE CAMERA mode. Your camera picture stays on your phone, viewers see Live Camera screen.</p>
+
+<h2>Add Video - YouTube / MP4</h2>
+<input id="vTitle" placeholder="Video Title"><input id="vArtist" placeholder="Artist"><input id="vUrl" placeholder="Paste YouTube OR MP4 Link"><input id="vAudio" placeholder="Audio Link for Download (optional)">
+<button class="green" onclick="addVideo()">+ ADD TO LINE-UP</button>
+
+<h2>Line-Up - Plays Forever, Looping</h2>
+<div id="queueBox">Loading...</div>
+
+<h2>Programs - Set Time EAT - Auto Play</h2>
+<input id="pTitle" placeholder="Program Name e.g Morning Hits"><input id="pUrl" placeholder="YouTube / MP4 Link for Program"><input id="pTime" type="time"><button class="green" onclick="addProgram()">+ ADD PROGRAM</button>
+<p class="small">Time is EAT (Uganda Time). When time reaches, it will stop anything playing and start program. After program finishes, line-up continues. Tomorrow same time it plays again until you delete.</p>
+<div id="programBox"></div>
+
+<h2>Registered Users - Online / Last Seen</h2>
+<div id="usersBox">Loading users...</div>
 </div>
 
-<div id="adminBody" style="display:none">
-<h2>HIT TV ADMIN</h2>
-<p style="font-size:12px;color:#aaa;margin-bottom:14px">Only YOU control everything here • <button class="btn-red" style="padding:6px 10px;font-size:11px" onclick="lockAdmin()">Lock Admin</button></p>
+<!-- OTHERS TAB -->
+<div id="tab-others" class="tab">
+<h2>Audio Streams - Upload From Phone</h2>
+<input id="aTitle" placeholder="Audio Title"><input id="aArtist" placeholder="Artist"><input id="aUrl" placeholder="MP3 Link OR Paste Link"><input type="file" id="aFile" accept="audio/*"><button class="green" onclick="addAudio()">+ ADD AUDIO STREAM</button>
+<div id="audioBox"></div>
 
-<!-- 1. USERS - WHO SIGNED IN, LAST SEEN, WATCHING NOW -->
-<div class="card"><b>👥 Users - Who Signed In</b><p style="font-size:12px;color:#aaa;margin-top:4px">Every viewer who created account with username. Green dot = WATCHING NOW (last seen less than 2 min ago). Sorted newest first.</p><br>
-<div style="display:flex;gap:8px;margin-bottom:12px">
-<div style="background:#0a1628;padding:10px;border-radius:10px;flex:1;text-align:center"><b id="totalUsers" style="font-size:20px;color:#00aaff">0</b><p style="font-size:11px">Total Users</p></div>
-<div style="background:#0a1628;padding:10px;border-radius:10px;flex:1;text-align:center"><b id="onlineUsers" style="font-size:20px;color:#00ff88">0</b><p style="font-size:11px">Watching Now</p></div>
-<div style="background:#0a1628;padding:10px;border-radius:10px;flex:1;text-align:center"><b id="todayUsers" style="font-size:20px;color:#ffaa00">0</b><p style="font-size:11px">Today</p></div>
-</div>
-<button class="btn-blue" onclick="loadUsers()">Refresh Users</button><br><br>
-<div id="userList">Loading users...</div>
-</div>
+<h2>Artist Submissions</h2>
+<div id="artistBox"></div>
 
-<!-- 2. LIVE COMMENTS - YOU SEE THEM -->
-<div class="card"><b>💬 Live Comments - From Viewers</b><p style="font-size:12px;color:#aaa;margin-top:4px">All comments viewers send on Live. Shows username + time.</p><br>
-<button class="btn-blue" onclick="loadComments()">Refresh Comments</button> <button class="btn-red" onclick="clearComments()">Clear All Comments</button><br><br>
-<div id="commentList">Loading comments...</div>
+<h2>Send Notification / Message To Viewers</h2>
+<input id="nTitle" placeholder="Title"><input id="nText" placeholder="Message"><button onclick="sendNotif()">Send To All Viewers</button>
+
+<h2>Viewer Comments - Reply</h2>
+<div id="commentBox"></div>
 </div>
 
-<!-- 3. LIVE -->
-<div class="card"><b>🔴 LIVE - Single Live Link</b><br><br>
-<input id="liveUrl" class="field" placeholder="YouTube / MP4 Live Link">
-<input id="liveTitle" class="field" placeholder="Live Title - shows in NOW PLAYING">
-<input id="liveDesc" class="field" placeholder="Live Description">
-<button class="btn-blue" onclick="saveLive()">Save Live</button> <button class="btn-red" onclick="stopLive()">Stop Live</button>
-</div>
-
-<!-- 4. LINE UP -->
-<div class="card"><b>📺 LINE UP - TV Channel - Auto Play</b><p style="font-size:12px;color:#aaa;margin-top:4px">Add YouTube links 1,2,3... Viewers watch Song 1, then Song 2 auto, then Song 3 auto, loop forever. Title shows in NOW PLAYING.</p><br>
-<input id="lineTitle" class="field" placeholder="Song Title - e.g Azawi - Outside">
-<input id="lineUrl" class="field" placeholder="YouTube Link">
-<button class="btn-green" onclick="addLineup()">+ Add To Line Up</button><br><br>
-<button class="btn-purple" id="lineToggleBtn" onclick="toggleLineup()">▶ START LINE UP</button> <button class="btn-orange" onclick="loadLineup()">Refresh</button>
-<p id="lineStatus" style="font-size:12px;color:#00aaff;margin-top:8px"></p><br><div id="lineList">Loading...</div>
-</div>
-
-<!-- 5. SUBMISSIONS - ARTIST WANTS TO UPLOAD -->
-<div class="card"><b>⬇ Submissions - From Artists</b><p style="font-size:12px;color:#aaa;margin-top:4px">Artist sends song, you check, you Approve -> it goes to Audio Streams. Or you Delete.</p><br><div id="subList">Loading...</div><button class="btn-blue" onclick="loadSubs()">Refresh Submissions</button></div>
-
-<!-- 6. AUDIO STREAMS - YOU UPLOAD YOURSELF TOO -->
-<div class="card"><b>🎵 Audio Streams - YOU Upload</b><p style="font-size:12px;color:#aaa;margin-top:4px">YOU can upload even if song is NOT from Artist. Put YouTube link OR MP3 link. Viewers can Play + Download it.</p><br>
-<input id="sTitle" class="field" placeholder="Song Title - e.g Azawi - Outside">
-<input id="sArtist" class="field" placeholder="Artist Name">
-<input id="sGenre" class="field" placeholder="Genre - e.g Afrobeat">
-<input id="sUrl" class="field" placeholder="YouTube Link OR MP3 Link - e.g https://...mp3">
-<button class="btn-green" onclick="addStream()">+ Add To Audio Streams</button><br><br><div id="streamList">Loading...</div></div>
-
-<!-- 7. NOTIFICATIONS -->
-<div class="card"><b>🔔 Send Notification - ONLY YOU</b><br><br>
-<input id="nTitle" class="field" placeholder="Notification Title"><input id="nMsg" class="field" placeholder="Message">
-<button class="btn-purple" onclick="sendNotif()">Send Notification To All Viewers</button><br><br><div id="notifList">Loading...</div><button class="btn-red" onclick="clearNotifs()">Clear All Notifications</button></div>
-
-<!-- 8. CHANGE ADMIN PASSWORD -->
-<div class="card"><b>🔒 Admin Settings - Change Password</b><br><br>
-<input id="newPass" class="field" placeholder="New Admin Password - e.g 5678" type="password">
-<button class="btn-blue" onclick="changePass()">Change Password</button>
-<p style="font-size:11px;color:#aaa;margin-top:8px">Default is 1234. After you change, use new password next time.</p>
-</div>
-
-</div>
-
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
 <script>
-const DB="https://hit-tv-app-40fb9-default-rtdb.firebaseio.com";
-let lineupOn=false;
-let adminPass = localStorage.getItem('hittv_admin_pass') || "1234";
-// PASSWORD GATE
-function unlockAdmin(){
-  let v=document.getElementById('adminPass').value.trim();
-  if(v===adminPass){
-    document.getElementById('lock').style.display='none';
-    document.getElementById('adminBody').style.display='block';
-    loadAll();
-  } else {
-    document.getElementById('lockMsg').innerText="❌ Wrong Password! Try 1234";
-  }
-}
-function lockAdmin(){
-  document.getElementById('lock').style.display='flex';
-  document.getElementById('adminBody').style.display='none';
-  document.getElementById('adminPass').value="";
-}
-function changePass(){
-  let np=document.getElementById('newPass').value.trim();
-  if(!np || np.length<4){ alert("Password must be at least 4 numbers/letters"); return; }
-  adminPass=np; localStorage.setItem('hittv_admin_pass', np);
-  document.getElementById('newPass').value="";
-  alert("✅ Password changed to: "+np+" - Remember it!");
-}
-function loadAll(){ loadUsers(); loadComments(); loadLineup(); loadSubs(); loadStreams(); loadNotifs(); }
+const firebaseConfig={apiKey:"AIzaSyAGzXyxBHmvBcWwoyWo4Xjn_1pGRyQjO_M",authDomain:"hittvapp1-29f3a.firebaseapp.com",projectId:"hittvapp1-29f3a",storageBucket:"hittvapp1-29f3a.firebasestorage.app",messagingSenderId:"567256630691",appId:"1:567256630691:web:5e6e22fe24416eb3270616",measurementId:"G-1JKDEMDGWT"};
+firebase.initializeApp(firebaseConfig); const db=firebase.firestore(); const storage=firebase.storage();
+function showTab(t){document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active')); document.getElementById('tab-'+t).classList.add('active'); document.getElementById('btnMain').classList.toggle('active',t==='main'); document.getElementById('btnOthers').classList.toggle('active',t==='others');}
+function detect(url){return (url.includes('youtube')||url.includes('youtu.be'))?'youtube':'mp4';}
+async function setLive(s){await db.collection('hitTV').doc('live').set({status:s,updated:Date.now()},{merge:true}); alert(s==='play'?'LIVE STARTED':'LIVE STOPPED');}
+async function saveNow(){await db.collection('hitTV').doc('live').set({title:document.getElementById('nowTitle').value,artist:document.getElementById('nowArtist').value,desc:document.getElementById('nowDesc').value},{merge:true}); alert('Now Playing Saved');}
+async function saveTicker(){let t=document.getElementById('tickerText').value; await db.collection('hitTV').doc('live').set({ticker:t},{merge:true}); document.getElementById('tickerBar').textContent=t;}
+async function addVideo(){let title=document.getElementById('vTitle').value,artist=document.getElementById('vArtist').value,url=document.getElementById('vUrl').value,audio=document.getElementById('vAudio').value; if(!title||!url) return alert('Fill Title + Link'); await db.collection('hitTV_queue').add({title,artist:artist||'Hit TV',url,type:detect(url),audio:audio||url,created:Date.now()}); alert('Added to Line-Up'); document.getElementById('vTitle').value='';document.getElementById('vUrl').value='';}
+async function addProgram(){let title=document.getElementById('pTitle').value,url=document.getElementById('pUrl').value,time=document.getElementById('pTime').value; if(!title||!url||!time) return alert('Fill all'); await db.collection('hitTV_programs').add({title,url,type:detect(url),time,created:Date.now()}); alert('Program Set for '+time+' EAT');}
+async function addAudio(){let title=document.getElementById('aTitle').value,artist=document.getElementById('aArtist').value,url=document.getElementById('aUrl').value; let file=document.getElementById('aFile').files[0]; if(file){let ref=storage.ref('audio/'+Date.now()+'_'+file.name); await ref.put(file); url=await ref.getDownloadURL();} if(!title||!url) return alert('Fill Title + MP3 Link or Choose File'); await db.collection('hitTV_audio').add({title,artist:artist||'Hit TV',url,created:Date.now()}); alert('Audio Added');}
+async function sendNotif(){let title=document.getElementById('nTitle').value,text=document.getElementById('nText').value; if(!title||!text) return alert('Fill'); await db.collection('hitTV_notif').add({title,text,time:Date.now()}); alert('Sent');}
+async function del(coll,id){if(confirm('Delete?')) await db.collection(coll).doc(id).delete();}
+async function approveArtist(id,data){await db.collection('hitTV_queue').add({title:data.title,artist:data.name,url:data.link,type:detect(data.link),audio:data.link,created:Date.now()}); await db.collection('hitTV_audio').add({title:data.title,artist:data.name,url:data.link,created:Date.now()}); await db.collection('hitTV_artist').doc(id).delete(); alert('Approved - Added to Live + Audio');}
+async function replyComment(id,name){let txt=prompt('Reply to '+name+':'); if(!txt) return; await db.collection('hitTV_notif').add({title:'Admin Reply to '+name,text:txt,time:Date.now()}); alert('Reply sent to '+name+' Notifications');}
 
-// 1. USERS
-async function loadUsers(){
-  let el=document.getElementById('userList');
-  try{
-    let r=await fetch(DB+"/users.json"); let d=await r.json();
-    if(!d){ el.innerHTML="<p>No users yet</p>"; document.getElementById('totalUsers').innerText="0"; return; }
-    let keys=Object.keys(d);
-    document.getElementById('totalUsers').innerText=keys.length;
-    let now=Date.now(), online=0, today=0, todayStr=new Date().toLocaleDateString();
-    let html="";
-    keys.sort((a,b)=>(d[b].lastSeenTime||0)-(d[a].lastSeenTime||0));
-    keys.forEach(k=>{
-      let u=d[k];
-      let isOnline = (now - (u.lastSeenTime||0)) < 120000;
-      if(isOnline) online++;
-      if(u.registeredDate===todayStr || (u.registered||"").includes(todayStr)) today++;
-      let dot = isOnline ? '<span class="live-dot"></span> <span style="color:#00ff88;font-weight:700">WATCHING NOW</span>' : '<span style="color:#aaa">Offline</span>';
-      html+=`<div class="user-row"><div style="display:flex;gap:10px;align-items:center"><div class="user-avatar">${(u.username||'?').charAt(0).toUpperCase()}</div><div><b>@${u.username||''}</b><p>Registered: ${u.registered||''}</p><p>Last Seen: ${u.lastSeen||''}</p></div></div><div style="text-align:right"><p>${dot}</p><button class="btn-red" style="padding:6px 10px;margin-top:6px;font-size:11px" onclick="delUser('${k}')">Delete</button></div></div>`;
-    });
-    document.getElementById('onlineUsers').innerText=online;
-    document.getElementById('todayUsers').innerText=today;
-    el.innerHTML=html;
-  }catch(e){ el.innerHTML="Failed"; }
-}
-async function delUser(k){ if(!confirm("Delete this user?")) return; await fetch(DB+"/users/"+k+".json",{method:"DELETE"}); loadUsers(); }
+// LIVE LISTENERS
+db.collection('hitTV_queue').orderBy('created').onSnapshot(s=>{document.getElementById('queueBox').innerHTML=s.empty?'<p>Empty</p>':s.docs.map(d=>{let v=d.data(); return `<div class="card"><b>${v.title}</b><br><span class="small">${v.artist} - ${v.type}</span><br><span class="small">${v.url}</span><div class="flex"><button class="red" onclick="del('hitTV_queue','${d.id}')">Delete From Line-Up</button></div></div>`}).join('');});
+db.collection('hitTV_programs').onSnapshot(s=>{document.getElementById('programBox').innerHTML=s.empty?'<p>No programs</p>':s.docs.map(d=>{let p=d.data(); return `<div class="card"><b>${p.title} - ${p.time} EAT</b><br><span class="small">${p.url}</span><button class="red" onclick="del('hitTV_programs','${d.id}')">Delete Program</button></div>`}).join('');});
+db.collection('hitTV_audio').onSnapshot(s=>{document.getElementById('audioBox').innerHTML=s.docs.map(d=>{let a=d.data(); return `<div class="card"><b>${a.title} - ${a.artist}</b><button class="red" onclick="del('hitTV_audio','${d.id}')">Delete Audio</button></div>`}).join('');});
+db.collection('hitTV_artist').onSnapshot(s=>{document.getElementById('artistBox').innerHTML=s.empty?'<p>No submissions</p>':s.docs.map(d=>{let a=d.data(); return `<div class="card"><b>${a.name} - ${a.title}</b><br><span class="small">Phone: ${a.phone||''} - Link: ${a.link}</span><div class="flex"><button class="green" onclick="approveArtist('${d.id}',${JSON.stringify(a).replace(/"/g,'&quot;')})">Approve</button><button class="red" onclick="del('hitTV_artist','${d.id}')">Reject</button></div></div>`}).join('');});
+db.collection('hitTV_comments').orderBy('time','desc').limit(30).onSnapshot(s=>{document.getElementById('commentBox').innerHTML=s.docs.map(d=>{let c=d.data(); return `<div class="card"><b>${c.name}</b><br>${c.text}<button class="blue" onclick="replyComment('${d.id}','${c.name}')">Reply To User</button></div>`}).join('')||'<p>No comments</p>';});
+db.collection('hitTV_users').onSnapshot(s=>{document.getElementById('usersBox').innerHTML=s.docs.map(d=>{let u=d.data(); let online=(Date.now()-u.lastSeen<60000)?'🟢 ONLINE':'⚪ Last seen '+new Date(u.lastSeen).toLocaleTimeString('en-GB',{timeZone:'Africa/Kampala'}); return `<div class="card"><b>${u.name}</b><br><span class="small">${online}</span></div>`}).join('')||'<p>No users yet</p>';});
+db.collection('hitTV').doc('live').onSnapshot(d=>{if(d.exists){let v=d.data(); document.getElementById('adminStatus').textContent='Firebase Connected - Live: '+(v.status||'play'); if(v.ticker) document.getElementById('tickerBar').textContent=v.ticker;}});
 
-// 2. COMMENTS - YOU SEE THEM
-async function loadComments(){
-  let el=document.getElementById('commentList');
-  try{
-    let r=await fetch(DB+"/comments.json"); let d=await r.json();
-    if(!d){ el.innerHTML="<p>No comments yet. When viewer sends comment on Live, it will show here.</p>"; return; }
-    let html="";
-    Object.keys(d).reverse().forEach(k=>{
-      let c=d[k];
-      html+=`<div class="sub"><b>@${c.username||'Guest'}</b><p>${c.text||''}</p><p style="font-size:11px">${c.time||''}</p><button class="btn-red" style="padding:5px 10px;font-size:11px;margin-top:6px" onclick="delComment('${k}')">Delete</button></div>`;
-    });
-    el.innerHTML=html;
-  }catch(e){ el.innerHTML="Failed"; }
-}
-async function delComment(k){ await fetch(DB+"/comments/"+k+".json",{method:"DELETE"}); loadComments(); }
-async function clearComments(){ if(!confirm("Clear all comments?")) return; await fetch(DB+"/comments.json",{method:"DELETE"}); loadComments(); }
-
-async function saveLive(){ let data={liveUrl:document.getElementById('liveUrl').value, liveTitle:document.getElementById('liveTitle').value, liveDesc:document.getElementById('liveDesc').value, mode:"live"}; await fetch(DB+"/config.json",{method:"PUT",body:JSON.stringify(data)}); alert("Live Saved!"); }
-async function stopLive(){ await fetch(DB+"/config.json",{method:"PUT",body:JSON.stringify({liveUrl:"",liveTitle:"Hit TV Live",liveDesc:"",mode:"off"})}); alert("Live Stopped"); }
-async function addLineup(){ let title=document.getElementById('lineTitle').value.trim(), url=document.getElementById('lineUrl').value.trim(); if(!title||!url){ alert("Fill Title and Link"); return; } await fetch(DB+"/lineup.json",{method:"POST",body:JSON.stringify({title,url})}); document.getElementById('lineTitle').value=""; document.getElementById('lineUrl').value=""; alert("Added!"); loadLineup(); }
-async function loadLineup(){ let el=document.getElementById('lineList'); try{ let r=await fetch(DB+"/lineup.json"); let d=await r.json(); if(!d){ el.innerHTML="<p>No Line Up yet</p>"; return; } let html=""; Object.keys(d).forEach((k,i)=>{ let s=d[k]; html+=`<div class="line-item"><div style="display:flex;gap:10px;align-items:center"><div class="num">${i+1}</div><div><b>${s.title||''}</b></div></div><button class="btn-red" onclick="delLine('${k}')">Delete</button></div>`; }); el.innerHTML=html; }catch(e){} }
-async function delLine(k){ if(!confirm("Delete?")) return; await fetch(DB+"/lineup/"+k+".json",{method:"DELETE"}); loadLineup(); }
-async function toggleLineup(){ lineupOn=!lineupOn; let btn=document.getElementById('lineToggleBtn'); if(lineupOn){ await fetch(DB+"/config.json",{method:"PATCH",body:JSON.stringify({mode:"lineup"})}); btn.innerText="■ STOP LINE UP"; btn.style.background="#ff2222"; document.getElementById('lineStatus').innerText="✅ LINE UP PLAYING"; } else { await fetch(DB+"/config.json",{method:"PATCH",body:JSON.stringify({mode:"off"})}); btn.innerText="▶ START LINE UP"; btn.style.background="#7b2fff"; document.getElementById('lineStatus').innerText="Stopped"; } }
-async function loadSubs(){ let el=document.getElementById('subList'); try{ let r=await fetch(DB+"/submissions.json"); let d=await r.json(); if(!d){ el.innerHTML="<p>No submissions</p>"; return; } let html=""; Object.keys(d).reverse().forEach(k=>{ let s=d[k]; html+=`<div class="sub"><b>${s.name||''}</b><p>Phone: ${s.phone||''} • Genre: ${s.genre||''}</p><p>Link: <a href="${s.link||''}" target="_blank" style="color:#00aaff">${s.link||''}</a></p><p>${s.bio||''}</p><div class="flex"><button class="btn-green" onclick="approveSub('${(s.name||'').replace(/'/g,"")}','${(s.link||'').replace(/'/g,"")}','${(s.genre||'').replace(/'/g,"")}','${k}')">✅ Approve To Audio Streams</button><button class="btn-red" onclick="delSub('${k}')">Delete</button></div></div>`; }); el.innerHTML=html; }catch(e){} }
-async function approveSub(name,link,genre,key){ await fetch(DB+"/audioStreams.json",{method:"POST",body:JSON.stringify({title:name+" - New Song",artist:name,genre:genre,url:link})}); await fetch(DB+"/submissions/"+key+".json",{method:"DELETE"}); alert("Approved! Now in Audio Streams, viewers can Download it."); loadSubs(); loadStreams(); }
-async function delSub(k){ await fetch(DB+"/submissions/"+k+".json",{method:"DELETE"}); loadSubs(); }
-async function addStream(){ let title=document.getElementById('sTitle').value.trim(), artist=document.getElementById('sArtist').value.trim(), genre=document.getElementById('sGenre').value.trim(), url=document.getElementById('sUrl').value.trim(); if(!title||!url){ alert("Fill Title and Link"); return; } await fetch(DB+"/audioStreams.json",{method:"POST",body:JSON.stringify({title,artist,genre,url})}); alert("Added! Viewers can Play + Download it."); loadStreams(); }
-async function loadStreams(){ let el=document.getElementById('streamList'); try{ let r=await fetch(DB+"/audioStreams.json"); let d=await r.json(); if(!d){ el.innerHTML="<p>No streams</p>"; return; } let html=""; Object.keys(d).forEach(k=>{ let s=d[k]; html+=`<div class="sub"><b>${s.title||''}</b><p>Artist: ${s.artist||''} • Genre: ${s.genre||''}</p><p style="font-size:11px;color:#00aaff">${s.url||''}</p><button class="btn-red" onclick="delStream('${k}')">Delete</button></div>`; }); el.innerHTML=html; }catch(e){} }
-async function delStream(k){ await fetch(DB+"/audioStreams/"+k+".json",{method:"DELETE"}); loadStreams(); }
-async function sendNotif(){ let title=document.getElementById('nTitle').value.trim(), msg=document.getElementById('nMsg').value.trim(); if(!title||!msg){ alert("Fill Title and Message"); return; } await fetch(DB+"/notifications.json",{method:"POST",body:JSON.stringify({title,msg,time:new Date().toLocaleString()})}); alert("Sent!"); loadNotifs(); }
-async function loadNotifs(){ let el=document.getElementById('notifList'); try{ let r=await fetch(DB+"/notifications.json"); let d=await r.json(); if(!d){ el.innerHTML="<p>No notifications</p>"; return; } let html=""; Object.keys(d).reverse().forEach(k=>{ let n=d[k]; html+=`<div class="sub"><b>${n.title||''}</b><p>${n.msg||''}</p></div>`; }); el.innerHTML=html; }catch(e){} }
-async function clearNotifs(){ await fetch(DB+"/notifications.json",{method:"DELETE"}); loadNotifs(); }
-setInterval(function(){ if(document.getElementById('adminBody').style.display==='block'){ loadUsers(); loadComments(); } }, 10000);
-</script>
-</body>
-  </html>
+// Camera
+let stream=null;
+async function startCamera(){try{stream=await navigator.mediaDevices.getUserMedia({video:true,audio:true}); document.getElementById('camPreview').srcObject=stream; document.getElementById('camPreview').style.display='block'; await db.collection('hitTV').doc('live').set({camera:true,mode:'camera'},{merge:true}); alert('Camera LIVE - Viewers see LIVE CAMERA');}catch(e){alert('Camera blocked - Allow camera permission');}}
+async function stopCamera(){if(stream) stream.getTracks().forEach(t=>t.stop()); document.getElementById('camPreview').style.display='none'; await db.collection('hitTV').doc('live').set({camera:false,mode:'queue'},{merge:true});}
+</script></body></html>

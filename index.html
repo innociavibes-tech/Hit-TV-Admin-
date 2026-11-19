@@ -3,10 +3,7 @@
 <style>*{box-sizing:border-box}body{margin:0;font-family:Arial;background:#0a1931;color:#fff;padding:12px;padding-bottom:90px}h1{font-size:24px}h2{border-bottom:1px solid #2a4a7a;padding-bottom:6px}input,select,textarea{width:100%;padding:13px;margin:6px 0;border:0;border-radius:12px;font-size:15px}button{width:100%;padding:13px;border:0;border-radius:12px;background:#fff;color:#0a1931;font-weight:800;margin:6px 0}button.green{background:#00c853;color:#fff}button.red{background:#ff3b30;color:#fff}button.blue{background:#2196f3;color:#fff}.card{background:#162a4a;padding:12px;border-radius:14px;margin:10px 0}.small{font-size:12px;color:#ccc}.flex{display:flex;gap:6px}.flex button{flex:1}.tab{display:none}.tab.active{display:block}nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:#000;padding:8px;gap:5px}nav button{flex:1;background:transparent;color:#aaa}nav button.active{background:#fff;color:#000}#tickerBar{background:#ffcc00;color:#000;padding:10px;border-radius:10px;font-weight:700;margin:10px 0}#camPreview{width:100%;border-radius:12px;display:none;background:#000}</style>
 </head><body>
 <h1>Hit TV - ADMIN PANEL</h1><p id="adminStatus">Connecting to Firebase...</p>
-
 <nav><button id="btnMain" class="active" onclick="showTab('main')">Main</button><button id="btnOthers" onclick="showTab('others')">Others</button></nav>
-
-<!-- MAIN TAB -->
 <div id="tab-main" class="tab active">
 <h2>Live Control</h2>
 <div class="flex"><button class="green" onclick="setLive('play')">PLAY LIVE</button><button class="red" onclick="setLive('stop')">STOP LIVE</button></div>
@@ -15,49 +12,36 @@
 <input id="nowArtist" placeholder="Artist Name">
 <input id="nowDesc" placeholder="Details about video playing">
 <button class="blue" onclick="saveNow()">Save Now Playing Details</button>
-
 <h2>Ticker - Words On Live Video</h2>
-<input id="tickerText" placeholder="e.g Welcome to Hit TV - Send your song requests...">
+<input id="tickerText" placeholder="e.g Welcome to Hit TV...">
 <button onclick="saveTicker()">Update Ticker For Viewers</button>
 <div id="tickerBar">Ticker will show here</div>
-
 <h2>Camera - Go Live With Your Camera</h2>
 <video id="camPreview" autoplay muted playsinline></video>
 <div class="flex"><button class="blue" onclick="startCamera()">Start Camera</button><button class="red" onclick="stopCamera()">Stop Camera</button></div>
-<p class="small">When Camera is ON, viewers see LIVE CAMERA mode. Your camera picture stays on your phone, viewers see Live Camera screen.</p>
-
+<p class="small">When Camera is ON, viewers see LIVE CAMERA mode.</p>
 <h2>Add Video - YouTube / MP4</h2>
 <input id="vTitle" placeholder="Video Title"><input id="vArtist" placeholder="Artist"><input id="vUrl" placeholder="Paste YouTube OR MP4 Link"><input id="vAudio" placeholder="Audio Link for Download (optional)">
 <button class="green" onclick="addVideo()">+ ADD TO LINE-UP</button>
-
 <h2>Line-Up - Plays Forever, Looping</h2>
 <div id="queueBox">Loading...</div>
-
 <h2>Programs - Set Time EAT - Auto Play</h2>
-<input id="pTitle" placeholder="Program Name e.g Morning Hits"><input id="pUrl" placeholder="YouTube / MP4 Link for Program"><input id="pTime" type="time"><button class="green" onclick="addProgram()">+ ADD PROGRAM</button>
-<p class="small">Time is EAT (Uganda Time). When time reaches, it will stop anything playing and start program. After program finishes, line-up continues. Tomorrow same time it plays again until you delete.</p>
+<input id="pTitle" placeholder="Program Name"><input id="pUrl" placeholder="YouTube / MP4 Link"><input id="pTime" type="time"><button class="green" onclick="addProgram()">+ ADD PROGRAM</button>
 <div id="programBox"></div>
-
 <h2>Registered Users - Online / Last Seen</h2>
 <div id="usersBox">Loading users...</div>
 </div>
-
-<!-- OTHERS TAB -->
 <div id="tab-others" class="tab">
-<h2>Audio Streams - Upload From Phone</h2>
-<input id="aTitle" placeholder="Audio Title"><input id="aArtist" placeholder="Artist"><input id="aUrl" placeholder="MP3 Link OR Paste Link"><input type="file" id="aFile" accept="audio/*"><button class="green" onclick="addAudio()">+ ADD AUDIO STREAM</button>
+<h2>Audio Streams</h2>
+<input id="aTitle" placeholder="Audio Title"><input id="aArtist" placeholder="Artist"><input id="aUrl" placeholder="MP3 Link"><input type="file" id="aFile" accept="audio/*"><button class="green" onclick="addAudio()">+ ADD AUDIO STREAM</button>
 <div id="audioBox"></div>
-
 <h2>Artist Submissions</h2>
 <div id="artistBox"></div>
-
-<h2>Send Notification / Message To Viewers</h2>
+<h2>Send Notification</h2>
 <input id="nTitle" placeholder="Title"><input id="nText" placeholder="Message"><button onclick="sendNotif()">Send To All Viewers</button>
-
-<h2>Viewer Comments - Reply</h2>
+<h2>Viewer Comments</h2>
 <div id="commentBox"></div>
 </div>
-
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
@@ -69,25 +53,26 @@ function detect(url){return (url.includes('youtube')||url.includes('youtu.be'))?
 async function setLive(s){await db.collection('hitTV').doc('live').set({status:s,updated:Date.now()},{merge:true}); alert(s==='play'?'LIVE STARTED':'LIVE STOPPED');}
 async function saveNow(){await db.collection('hitTV').doc('live').set({title:document.getElementById('nowTitle').value,artist:document.getElementById('nowArtist').value,desc:document.getElementById('nowDesc').value},{merge:true}); alert('Now Playing Saved');}
 async function saveTicker(){let t=document.getElementById('tickerText').value; await db.collection('hitTV').doc('live').set({ticker:t},{merge:true}); document.getElementById('tickerBar').textContent=t;}
-async function addVideo(){let title=document.getElementById('vTitle').value,artist=document.getElementById('vArtist').value,url=document.getElementById('vUrl').value,audio=document.getElementById('vAudio').value; if(!title||!url) return alert('Fill Title + Link'); await db.collection('hitTV_queue').add({title,artist:artist||'Hit TV',url,type:detect(url),audio:audio||url,created:Date.now()}); alert('Added to Line-Up'); document.getElementById('vTitle').value='';document.getElementById('vUrl').value='';}
+async function addVideo(){let title=document.getElementById('vTitle').value,artist=document.getElementById('vArtist').value,url=document.getElementById('vUrl').value,audio=document.getElementById('vAudio').value; if(!title||!url) return alert('Fill Title + Link'); await db.collection('hitTV_queue').add({title,artist:artist||'Hit TV',url,type:detect(url),audio:audio||url,created:Date.now()}); alert('Added to Line-Up - Now press PLAY THIS NOW on it'); document.getElementById('vTitle').value='';document.getElementById('vUrl').value='';}
 async function addProgram(){let title=document.getElementById('pTitle').value,url=document.getElementById('pUrl').value,time=document.getElementById('pTime').value; if(!title||!url||!time) return alert('Fill all'); await db.collection('hitTV_programs').add({title,url,type:detect(url),time,created:Date.now()}); alert('Program Set for '+time+' EAT');}
 async function addAudio(){let title=document.getElementById('aTitle').value,artist=document.getElementById('aArtist').value,url=document.getElementById('aUrl').value; let file=document.getElementById('aFile').files[0]; if(file){let ref=storage.ref('audio/'+Date.now()+'_'+file.name); await ref.put(file); url=await ref.getDownloadURL();} if(!title||!url) return alert('Fill Title + MP3 Link or Choose File'); await db.collection('hitTV_audio').add({title,artist:artist||'Hit TV',url,created:Date.now()}); alert('Audio Added');}
 async function sendNotif(){let title=document.getElementById('nTitle').value,text=document.getElementById('nText').value; if(!title||!text) return alert('Fill'); await db.collection('hitTV_notif').add({title,text,time:Date.now()}); alert('Sent');}
 async function del(coll,id){if(confirm('Delete?')) await db.collection(coll).doc(id).delete();}
-async function approveArtist(id,data){await db.collection('hitTV_queue').add({title:data.title,artist:data.name,url:data.link,type:detect(data.link),audio:data.link,created:Date.now()}); await db.collection('hitTV_audio').add({title:data.title,artist:data.name,url:data.link,created:Date.now()}); await db.collection('hitTV_artist').doc(id).delete(); alert('Approved - Added to Live + Audio');}
-async function replyComment(id,name){let txt=prompt('Reply to '+name+':'); if(!txt) return; await db.collection('hitTV_notif').add({title:'Admin Reply to '+name,text:txt,time:Date.now()}); alert('Reply sent to '+name+' Notifications');}
-
-// LIVE LISTENERS
-db.collection('hitTV_queue').orderBy('created').onSnapshot(s=>{document.getElementById('queueBox').innerHTML=s.empty?'<p>Empty</p>':s.docs.map(d=>{let v=d.data(); return `<div class="card"><b>${v.title}</b><br><span class="small">${v.artist} - ${v.type}</span><br><span class="small">${v.url}</span><div class="flex"><button class="red" onclick="del('hitTV_queue','${d.id}')">Delete From Line-Up</button></div></div>`}).join('');});
+// NEW - THIS IS THE FIX: Play a specific video NOW on all Viewers
+async function playNow(id, v){
+  await db.collection('hitTV').doc('live').set({status:'play', camera:false, mode:'queue', url:v.url, link:v.url, title:v.title, artist:v.artist, type:v.type, audio:v.audio||v.url, force:Date.now(), currentId:id},{merge:true});
+  alert('NOW PLAYING on Viewers: '+v.title);
+}
+async function approveArtist(id,data){await db.collection('hitTV_queue').add({title:data.title,artist:data.name,url:data.link,type:detect(data.link),audio:data.link,created:Date.now()}); await db.collection('hitTV_audio').add({title:data.title,artist:data.name,url:data.link,created:Date.now()}); await db.collection('hitTV_artist').doc(id).delete(); alert('Approved');}
+async function replyComment(id,name){let txt=prompt('Reply to '+name+':'); if(!txt) return; await db.collection('hitTV_notif').add({title:'Admin Reply to '+name,text:txt,time:Date.now()}); alert('Reply sent');}
+db.collection('hitTV_queue').orderBy('created').onSnapshot(s=>{document.getElementById('queueBox').innerHTML=s.empty?'<p>Empty</p>':s.docs.map(d=>{let v=d.data(); let safe=JSON.stringify(v).replace(/"/g,'&quot;'); return `<div class="card"><b>${v.title}</b><br><span class="small">${v.artist} - ${v.type}</span><br><span class="small">${v.url}</span><div class="flex"><button class="green" onclick="playNow('${d.id}',${safe})">▶ PLAY THIS NOW</button></div><button class="red" onclick="del('hitTV_queue','${d.id}')">Delete From Line-Up</button></div>`}).join('');});
 db.collection('hitTV_programs').onSnapshot(s=>{document.getElementById('programBox').innerHTML=s.empty?'<p>No programs</p>':s.docs.map(d=>{let p=d.data(); return `<div class="card"><b>${p.title} - ${p.time} EAT</b><br><span class="small">${p.url}</span><button class="red" onclick="del('hitTV_programs','${d.id}')">Delete Program</button></div>`}).join('');});
 db.collection('hitTV_audio').onSnapshot(s=>{document.getElementById('audioBox').innerHTML=s.docs.map(d=>{let a=d.data(); return `<div class="card"><b>${a.title} - ${a.artist}</b><button class="red" onclick="del('hitTV_audio','${d.id}')">Delete Audio</button></div>`}).join('');});
 db.collection('hitTV_artist').onSnapshot(s=>{document.getElementById('artistBox').innerHTML=s.empty?'<p>No submissions</p>':s.docs.map(d=>{let a=d.data(); return `<div class="card"><b>${a.name} - ${a.title}</b><br><span class="small">Phone: ${a.phone||''} - Link: ${a.link}</span><div class="flex"><button class="green" onclick="approveArtist('${d.id}',${JSON.stringify(a).replace(/"/g,'&quot;')})">Approve</button><button class="red" onclick="del('hitTV_artist','${d.id}')">Reject</button></div></div>`}).join('');});
 db.collection('hitTV_comments').orderBy('time','desc').limit(30).onSnapshot(s=>{document.getElementById('commentBox').innerHTML=s.docs.map(d=>{let c=d.data(); return `<div class="card"><b>${c.name}</b><br>${c.text}<button class="blue" onclick="replyComment('${d.id}','${c.name}')">Reply To User</button></div>`}).join('')||'<p>No comments</p>';});
 db.collection('hitTV_users').onSnapshot(s=>{document.getElementById('usersBox').innerHTML=s.docs.map(d=>{let u=d.data(); let online=(Date.now()-u.lastSeen<60000)?'🟢 ONLINE':'⚪ Last seen '+new Date(u.lastSeen).toLocaleTimeString('en-GB',{timeZone:'Africa/Kampala'}); return `<div class="card"><b>${u.name}</b><br><span class="small">${online}</span></div>`}).join('')||'<p>No users yet</p>';});
 db.collection('hitTV').doc('live').onSnapshot(d=>{if(d.exists){let v=d.data(); document.getElementById('adminStatus').textContent='Firebase Connected - Live: '+(v.status||'play'); if(v.ticker) document.getElementById('tickerBar').textContent=v.ticker;}});
-
-// Camera
 let stream=null;
-async function startCamera(){try{stream=await navigator.mediaDevices.getUserMedia({video:true,audio:true}); document.getElementById('camPreview').srcObject=stream; document.getElementById('camPreview').style.display='block'; await db.collection('hitTV').doc('live').set({camera:true,mode:'camera'},{merge:true}); alert('Camera LIVE - Viewers see LIVE CAMERA');}catch(e){alert('Camera blocked - Allow camera permission');}}
+async function startCamera(){try{stream=await navigator.mediaDevices.getUserMedia({video:true,audio:true}); document.getElementById('camPreview').srcObject=stream; document.getElementById('camPreview').style.display='block'; await db.collection('hitTV').doc('live').set({camera:true,mode:'camera'},{merge:true}); alert('Camera LIVE');}catch(e){alert('Camera blocked');}}
 async function stopCamera(){if(stream) stream.getTracks().forEach(t=>t.stop()); document.getElementById('camPreview').style.display='none'; await db.collection('hitTV').doc('live').set({camera:false,mode:'queue'},{merge:true});}
 </script></body></html>

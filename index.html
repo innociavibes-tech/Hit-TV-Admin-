@@ -41,7 +41,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
 <script>
-const firebaseConfig={apiKey:"AIzaSyAGzXyxBHmvBcWwoyWo4Xjn_1pGRyQjO_M",authDomain:"hittvapp1-29f3a.firebaseapp.com",projectId:"hittvapp1-29f3a",storageBucket:"hittvapp1-29f3a.firebasestorage.app",messagingSenderId:"567256630691",appId:"1:567256630691:web:5e6e22fe24416eb3270616",measurementId:"G-1JKDEMDGWT"};
+const firebaseConfig={apiKey:"AIzaSyBT9bXCGb6WgriW1wodo6IeRKOUQ5jdCes",authDomain:"hit-tv-app-40fb9.firebaseapp.com",databaseURL:"https://hit-tv-app-40fb9-default-rtdb.firebaseio.com",projectId:"hit-tv-app-40fb9",storageBucket:"hit-tv-app-40fb9.firebasestorage.app",messagingSenderId:"740828744097",appId:"1:740828744097:web:49104b3522d02de64ce3e0"};
 firebase.initializeApp(firebaseConfig); const db=firebase.firestore(); const storage=firebase.storage();
 function showTab(t){document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active')); document.getElementById('tab-'+t).classList.add('active'); document.getElementById('btnMain').classList.toggle('active',t==='main'); document.getElementById('btnOthers').classList.toggle('active',t==='others');}
 function detect(url){return (url.includes('youtube')||url.includes('youtu.be'))?'youtube':'mp4';}

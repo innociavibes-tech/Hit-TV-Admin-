@@ -51,57 +51,39 @@ const firebaseConfig={apiKey:"AIzaSyBT9bXCGb6WgriW1wodo6IeRKOUQ5jdCes",authDomai
 firebase.initializeApp(firebaseConfig); const db=firebase.firestore(); const storage=firebase.storage();
 let adminQueue=[], adminLoopOn=false, adminLoopIndex=0, adminLoopTimer=null, adminCurrentId='';
 let adminYTObj=null, adminYTReady=false, adminYTEnded=false, adminResumed=false, adminLiveDoc=null, adminMP4Player=null;
-let adminStopToken=0;
-function showTab(t){try{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active')); var el=document.getElementById('tab-'+t); if(el) el.classList.add('active'); var b1=document.getElementById('btnMain'); var b2=document.getElementById('btnOthers'); if(b1) b1.classList.toggle('active',t==='main'); if(b2) b2.classList.toggle('active',t==='others'); window.scrollTo(0,0);}catch(e){}}
+function showTab(t){document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active')); document.getElementById('tab-'+t).classList.add('active'); document.getElementById('btnMain').classList.toggle('active',t==='main'); document.getElementById('btnOthers').classList.toggle('active',t==='others');}
 function detect(url){return (url.includes('youtube')||url.includes('youtu.be'))?'youtube':'mp4';}
 function getYTId(u){ if(!u) return null; u=u.trim(); let m=u.match(/(?:v=|vi=|youtu\.be\/|shorts\/|live\/|embed\/)([A-Za-z0-9_-]{11})/); if(m) return m[1]; if(u.length===11) return u; return null; }
-async function clearLiveForViewer(){
-  try{ await db.collection('hitTV').doc('live').set({status:'stop',loopOn:false,camera:false,mode:'queue',url:'',link:'',title:'No video yet',artist:'Hit TV',desc:'',type:'mp4',audio:'',force:Date.now(),startedAt:Date.now(),currentId:'',currentIndex:0,durationSec:0,updated:Date.now()},{merge:true}); }catch(e){}
-}
-async function setLive(s){
-  if(s==='stop'){ adminStopToken++; adminLoopOn=false; adminCurrentId=''; stopAdminWatchers(); document.getElementById('nowPlayingAdmin').textContent='TV Loop is OFF'; clearLiveForViewer(); alert('LIVE STOPPED'); return; }
-  try{ await db.collection('hitTV').doc('live').set({status:s,updated:Date.now()},{merge:true}); alert('LIVE STARTED'); }catch(e){alert('LIVE FAILED: '+e.message);}
-}
+async function setLive(s){try{await db.collection('hitTV').doc('live').set({status:s,updated:Date.now()},{merge:true}); alert(s==='play'?'LIVE STARTED':'LIVE STOPPED');}catch(e){alert('LIVE FAILED: '+e.message);}}
 async function saveTicker(){try{let t=document.getElementById('tickerText').value; if(!t) return alert('Type ticker first'); await db.collection('hitTV').doc('live').set({ticker:t},{merge:true}); document.getElementById('tickerBar').textContent=t; alert('Ticker SENT to Viewers: '+t);}catch(e){alert('TICKER FAILED: '+e.message);}}
 async function addVideo(){try{let title=document.getElementById('vTitle').value,artist=document.getElementById('vArtist').value,url=document.getElementById('vUrl').value,audio=document.getElementById('vAudio').value; if(!title||!url) return alert('Fill Title + Link'); await db.collection('hitTV_queue').add({title,artist:artist||'Hit TV',url,type:detect(url),audio:audio||url,created:Date.now()}); alert('Added to Line-Up - TV Loop will play it automatically'); document.getElementById('vTitle').value='';document.getElementById('vUrl').value='';}catch(e){alert('ADD FAILED: '+e.message);}}
 async function addProgram(){try{let title=document.getElementById('pTitle').value,url=document.getElementById('pUrl').value,time=document.getElementById('pTime').value; if(!title||!url||!time) return alert('Fill all'); await db.collection('hitTV_programs').add({title,url,type:detect(url),time,created:Date.now()}); alert('Program Set for '+time+' EAT');}catch(e){alert('PROGRAM FAILED: '+e.message);}}
 async function addAudio(){try{let title=document.getElementById('aTitle').value,artist=document.getElementById('aArtist').value,url=document.getElementById('aUrl').value; let file=document.getElementById('aFile').files[0]; if(file){let ref=storage.ref('audio/'+Date.now()+'_'+file.name); await ref.put(file); url=await ref.getDownloadURL();} if(!title||!url) return alert('Fill Title + MP3 Link or Choose File'); await db.collection('hitTV_audio').add({title,artist:artist||'Hit TV',url,created:Date.now()}); alert('Audio Added');}catch(e){alert('AUDIO FAILED: '+e.message);}}
 async function sendNotif(){try{let title=document.getElementById('nTitle').value,text=document.getElementById('nText').value; if(!title||!text) return alert('Fill Title + Message'); await db.collection('hitTV_notif').add({title,text,time:Date.now()}); alert('Notification SENT to all Viewers: '+title); document.getElementById('nTitle').value=''; document.getElementById('nText').value='';}catch(e){alert('NOTIF FAILED: '+e.message);}}
-async function del(coll,id){
-  if(!confirm('Delete?')) return;
-  try{
-    let wasCurrent = (coll==='hitTV_queue' && id===adminCurrentId);
-    await db.collection(coll).doc(id).delete();
-    if(wasCurrent){
-      adminStopToken++; adminLoopOn=false; adminCurrentId=''; stopAdminWatchers();
-      document.getElementById('nowPlayingAdmin').textContent='TV Loop is OFF - Deleted song was playing, TV stopped';
-      await clearLiveForViewer();
-    }
-  }catch(e){alert('DELETE FAILED: '+e.message);}
-}
+async function del(coll,id){if(confirm('Delete?')){try{await db.collection(coll).doc(id).delete();}catch(e){alert('DELETE FAILED: '+e.message);}}}
+// ===== FIX 1+2+3: LOOP FOR ALL LINKS - MP4 + YOUTUBE - FINISH = NEXT IMMEDIATELY =====
 function onYouTubeIframeAPIReady(){ adminYTReady=true; }
 function stopAdminWatchers(){
-  if(adminLoopTimer) clearTimeout(adminLoopTimer); adminLoopTimer=null;
+  if(adminLoopTimer) clearTimeout(adminLoopTimer);
   if(adminYTObj && adminYTObj.destroy){ try{adminYTObj.destroy();}catch(e){} adminYTObj=null; }
-  if(adminMP4Player){ try{adminMP4Player.pause(); adminMP4Player.onended=null; adminMP4Player.removeAttribute('src');}catch(e){} }
+  if(adminMP4Player){ try{adminMP4Player.pause(); adminMP4Player.onended=null;}catch(e){} }
 }
-function watchAdminYT(yid, offset, token){
-  if(token!==adminStopToken) return;
-  if(!adminYTReady || !window.YT || !window.YT.Player){ setTimeout(()=>watchAdminYT(yid, offset, token),500); return; }
+function watchAdminYT(yid, offset){
+  if(!adminYTReady || !window.YT || !window.YT.Player){ setTimeout(()=>watchAdminYT(yid, offset),500); return; }
   try{
     if(adminYTObj && adminYTObj.destroy){ try{adminYTObj.destroy();}catch(e){} }
     adminYTEnded=false;
     document.getElementById('adminYT').innerHTML='<div id="adminYTFrame"></div>';
-    adminYTObj=new YT.Player('adminYTFrame',{height:'1',width:'1',videoId:yid,playerVars:{autoplay:1,mute:1,start:offset,controls:0},events:{onStateChange:function(e){ if(e.data===YT.PlayerState.ENDED && !adminYTEnded){ adminYTEnded=true; if(adminLoopOn && token===adminStopToken) playLoopItem(adminLoopIndex+1,false); } }}});
+    adminYTObj=new YT.Player('adminYTFrame',{height:'1',width:'1',videoId:yid,playerVars:{autoplay:1,mute:1,start:offset,controls:0},events:{onStateChange:function(e){ if(e.data===YT.PlayerState.ENDED && !adminYTEnded){ adminYTEnded=true; if(adminLoopOn) playLoopItem(adminLoopIndex+1,false); } }}});
   }catch(e){}
 }
-function watchAdminMP4(url, offset, token){
+function watchAdminMP4(url, offset){
   try{
     if(!adminMP4Player) adminMP4Player=document.getElementById('adminMP4');
     adminMP4Player.onended=null; adminMP4Player.pause();
     adminMP4Player.src=url; adminMP4Player.currentTime=offset||0;
     adminMP4Player.play().catch(()=>{});
-    adminMP4Player.onended=function(){ if(adminLoopOn && token===adminStopToken) playLoopItem(adminLoopIndex+1,false); };
+    adminMP4Player.onended=function(){ if(adminLoopOn) playLoopItem(adminLoopIndex+1,false); };
   }catch(e){}
 }
 async function getDurationSec(v){
@@ -110,21 +92,20 @@ async function getDurationSec(v){
   }
   return 180;
 }
+// ===== REAL TV LOOP IN ADMIN - REPLACES PLAY THIS NOW =====
 async function playLoopItem(index, keepStartedAt, keepStartedAtVal, keepDurationVal){
-  let myToken=adminStopToken;
   if(!adminLoopOn) return;
-  if(!adminQueue.length) { document.getElementById('nowPlayingAdmin').textContent='Line-Up is empty - Add videos first'; adminLoopOn=false; await clearLiveForViewer(); return; }
+  if(!adminQueue.length) { document.getElementById('nowPlayingAdmin').textContent='Line-Up is empty - Add videos first'; adminLoopOn=false; return; }
   if(index>=adminQueue.length) index=0;
   adminLoopIndex=index;
   let v=adminQueue[index];
   adminCurrentId=v.id;
   let startedAt=keepStartedAt ? keepStartedAtVal : Date.now();
   let durationSec=keepDurationVal || await getDurationSec(v);
-  if(!adminLoopOn || myToken!==adminStopToken) return;
   let update={status:'play',camera:false,mode:'queue',loopOn:true,url:v.url,link:v.url,title:v.title,artist:v.artist||'Hit TV',desc:v.artist||'',type:v.type||detect(v.url||''),audio:v.audio||v.url,startedAt:startedAt,currentId:v.id,currentIndex:index,durationSec:durationSec,updated:Date.now()};
+  // On fresh play, send new force. On resume after refresh, DO NOT send force - Viewers keep playing where they are
   if(!keepStartedAt) update.force=Date.now();
   await db.collection('hitTV').doc('live').set(update,{merge:true});
-  if(!adminLoopOn || myToken!==adminStopToken) return;
   document.getElementById('nowPlayingAdmin').textContent='📺 NOW ON TV: '+(index+1)+'/'+adminQueue.length+' - '+v.title+' - Next song auto plays';
   renderAdminQueue();
   stopAdminWatchers();
@@ -134,15 +115,15 @@ async function playLoopItem(index, keepStartedAt, keepStartedAtVal, keepDuration
   let isYT=(v.type==='youtube'||(v.url||'').includes('youtube')||(v.url||'').includes('youtu.be'));
   if(isYT){
     let yid=getYTId(v.url);
-    if(yid) watchAdminYT(yid, elapsed, myToken);
+    if(yid) watchAdminYT(yid, elapsed);
   } else {
-    watchAdminMP4(v.url, elapsed, myToken);
+    watchAdminMP4(v.url, elapsed);
   }
-  adminLoopTimer=setTimeout(()=>{ if(adminLoopOn && myToken===adminStopToken) playLoopItem(adminLoopIndex+1,false); }, remaining*1000);
+  // Fallback timer - if watcher misses, timer still moves on
+  adminLoopTimer=setTimeout(()=>{ if(adminLoopOn) playLoopItem(adminLoopIndex+1,false); }, remaining*1000);
 }
 function startTVLoop(){
   if(!adminQueue.length) return alert('Add videos to Line-Up first');
-  adminStopToken++;
   adminLoopOn=true;
   adminLoopIndex=0;
   adminResumed=true;
@@ -150,27 +131,21 @@ function startTVLoop(){
   alert('TV LOOP STARTED - Line-Up will play forever, looping. Viewers join where it is.');
 }
 function stopTVLoop(){
-  adminStopToken++;
   adminLoopOn=false;
-  adminCurrentId='';
   stopAdminWatchers();
+  db.collection('hitTV').doc('live').set({loopOn:false},{merge:true});
   document.getElementById('nowPlayingAdmin').textContent='TV Loop is OFF';
-  clearLiveForViewer();
   alert('TV LOOP STOPPED');
 }
 function tryResumeAdminLoop(){
   if(adminResumed) return;
   if(!adminLiveDoc || !adminLiveDoc.loopOn) return;
   if(!adminQueue.length) return;
-  if(adminLiveDoc.currentId){
-    let f=adminQueue.findIndex(q=>q.id===adminLiveDoc.currentId);
-    if(f<0){ adminResumed=true; adminLoopOn=false; clearLiveForViewer(); document.getElementById('nowPlayingAdmin').textContent='TV Loop is OFF - That song was deleted'; return; }
-    adminResumed=true; adminLoopOn=true;
-    playLoopItem(f, true, adminLiveDoc.startedAt||Date.now(), adminLiveDoc.durationSec||180);
-    return;
-  }
   adminResumed=true; adminLoopOn=true;
-  playLoopItem(adminLiveDoc.currentIndex||0, true, adminLiveDoc.startedAt||Date.now(), adminLiveDoc.durationSec||180);
+  let idx=0;
+  if(adminLiveDoc.currentId){ let f=adminQueue.findIndex(q=>q.id===adminLiveDoc.currentId); if(f>=0) idx=f; }
+  else if(adminLiveDoc.currentIndex!=null) idx=adminLiveDoc.currentIndex;
+  playLoopItem(idx, true, adminLiveDoc.startedAt||Date.now(), adminLiveDoc.durationSec||180);
 }
 function renderAdminQueue(){
   document.getElementById('queueBox').innerHTML=adminQueue.length?adminQueue.map(v=>{
@@ -190,19 +165,10 @@ async function approveArtist(id){
   }catch(e){alert('APPROVE FAILED: '+e.message);}
 }
 async function replyComment(id,name){let txt=prompt('Reply to '+name+':'); if(!txt) return; try{await db.collection('hitTV_notif').add({title:'Admin Reply to '+name,text:txt,time:Date.now()}); alert('Reply sent');}catch(e){alert('REPLY FAILED: '+e.message);}}
-db.collection('hitTV_queue').onSnapshot(s=>{
-  adminQueue=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.created||0)-(b.created||0));
-  renderAdminQueue();
-  if(!adminQueue.length && adminLoopOn){
-    adminStopToken++; adminLoopOn=false; adminCurrentId=''; stopAdminWatchers();
-    clearLiveForViewer();
-    document.getElementById('nowPlayingAdmin').textContent='TV Loop is OFF - Line-Up is empty';
-  }
-  tryResumeAdminLoop();
-},e=>{document.getElementById('queueBox').innerHTML='Error: '+e.message;});
-db.collection('hitTV_programs').onSnapshot(s=>{document.getElementById('programBox').innerHTML=s.empty?'<p>No programs</p>':s.docs.map(d=>{let p=d.data(); return `<div class="card"><b>${p.title} - ${p.time} EAT</b><br><span class="small">${p.url}</span><button class="red" onclick="del('hitTV_programs','${d.id}')">Delete Program</button></div>`).join('');});
-db.collection('hitTV_audio').onSnapshot(s=>{document.getElementById('audioBox').innerHTML=s.docs.map(d=>{let a=d.data(); return `<div class="card"><b>${a.title} - ${a.artist}</b><button class="red" onclick="del('hitTV_audio','${d.id}')">Delete Audio</button></div>`).join('');});
-db.collection('hitTV_artist').onSnapshot(s=>{document.getElementById('artistBox').innerHTML=s.empty?'<p>No submissions</p>':s.docs.map(d=>{let a=d.data(); return `<div class="card"><b>${a.name} - ${a.title}</b><br><span class="small">Phone: ${a.phone||''} - Link: ${a.link}</span><div class="flex"><button class="green" onclick="approveArtist('${d.id}')">Approve</button><button class="red" onclick="del('hitTV_artist','${d.id}')">Reject</button></div></div>`).join('');});
+db.collection('hitTV_queue').onSnapshot(s=>{adminQueue=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.created||0)-(b.created||0)); renderAdminQueue(); tryResumeAdminLoop();},e=>{document.getElementById('queueBox').innerHTML='Error: '+e.message;});
+db.collection('hitTV_programs').onSnapshot(s=>{document.getElementById('programBox').innerHTML=s.empty?'<p>No programs</p>':s.docs.map(d=>{let p=d.data(); return `<div class="card"><b>${p.title} - ${p.time} EAT</b><br><span class="small">${p.url}</span><button class="red" onclick="del('hitTV_programs','${d.id}')">Delete Program</button></div>`}).join('');});
+db.collection('hitTV_audio').onSnapshot(s=>{document.getElementById('audioBox').innerHTML=s.docs.map(d=>{let a=d.data(); return `<div class="card"><b>${a.title} - ${a.artist}</b><button class="red" onclick="del('hitTV_audio','${d.id}')">Delete Audio</button></div>`}).join('');});
+db.collection('hitTV_artist').onSnapshot(s=>{document.getElementById('artistBox').innerHTML=s.empty?'<p>No submissions</p>':s.docs.map(d=>{let a=d.data(); return `<div class="card"><b>${a.name} - ${a.title}</b><br><span class="small">Phone: ${a.phone||''} - Link: ${a.link}</span><div class="flex"><button class="green" onclick="approveArtist('${d.id}')">Approve</button><button class="red" onclick="del('hitTV_artist','${d.id}')">Reject</button></div></div>`}).join('');});
 db.collection('hitTV_comments').onSnapshot(s=>{let arr=s.docs.map(d=>d.data()).sort((a,b)=>(b.time||0)-(a.time||0)).slice(0,30); document.getElementById('commentBox').innerHTML=arr.map(c=>`<div class="card"><b>${c.name}</b><br>${c.text}</div>`).join('')||'<p>No comments</p>';});
 db.collection('hitTV_users').onSnapshot(s=>{document.getElementById('usersBox').innerHTML=s.docs.map(d=>{let u=d.data(); let online=(Date.now()-u.lastSeen<60000)?'🟢 ONLINE':'⚪ Last seen '+new Date(u.lastSeen).toLocaleTimeString('en-GB',{timeZone:'Africa/Kampala'}); return `<div class="card"><b>${u.name}</b><br><span class="small">${online}</span></div>`}).join('')||'<p>No users yet</p>';});
 db.collection('hitTV').doc('live').onSnapshot(d=>{if(d.exists){let v=d.data(); adminLiveDoc=v; document.getElementById('adminStatus').textContent='Firebase Connected - Live: '+(v.status||'play'); if(v.ticker) document.getElementById('tickerBar').textContent=v.ticker; tryResumeAdminLoop();}});

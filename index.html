@@ -7,6 +7,9 @@
 <div id="tab-main" class="tab active">
 <h2>Live Control</h2>
 <div class="flex"><button class="green" onclick="setLive('play')">PLAY LIVE</button><button class="red" onclick="setLive('stop')">STOP LIVE</button></div>
+<h2>Real TV Loop - No More Play This Now</h2>
+<p class="small" id="nowPlayingAdmin">TV Loop is OFF - Press START to loop Line-Up forever</p>
+<div class="flex"><button class="green" onclick="startTVLoop()">▶ START TV LOOP</button><button class="red" onclick="stopTVLoop()">⏹ STOP TV LOOP</button></div>
 <h2>Ticker - Words On Live Video</h2>
 <input id="tickerText" placeholder="e.g Welcome to Hit TV...">
 <button onclick="saveTicker()">Update Ticker For Viewers</button>
@@ -43,27 +46,58 @@
 <script>
 const firebaseConfig={apiKey:"AIzaSyBT9bXCGb6WgriW1wodo6IeRKOUQ5jdCes",authDomain:"hit-tv-app-40fb9.firebaseapp.com",databaseURL:"https://hit-tv-app-40fb9-default-rtdb.firebaseio.com",projectId:"hit-tv-app-40fb9",storageBucket:"hit-tv-app-40fb9.firebasestorage.app",messagingSenderId:"740828744097",appId:"1:740828744097:web:49104b3522d02de64ce3e0"};
 firebase.initializeApp(firebaseConfig); const db=firebase.firestore(); const storage=firebase.storage();
+let adminQueue=[], adminLoopOn=false, adminLoopIndex=0, adminLoopTimer=null, adminCurrentId='';
 function showTab(t){document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active')); document.getElementById('tab-'+t).classList.add('active'); document.getElementById('btnMain').classList.toggle('active',t==='main'); document.getElementById('btnOthers').classList.toggle('active',t==='others');}
 function detect(url){return (url.includes('youtube')||url.includes('youtu.be'))?'youtube':'mp4';}
 async function setLive(s){try{await db.collection('hitTV').doc('live').set({status:s,updated:Date.now()},{merge:true}); alert(s==='play'?'LIVE STARTED':'LIVE STOPPED');}catch(e){alert('LIVE FAILED: '+e.message);}}
 async function saveTicker(){try{let t=document.getElementById('tickerText').value; if(!t) return alert('Type ticker first'); await db.collection('hitTV').doc('live').set({ticker:t},{merge:true}); document.getElementById('tickerBar').textContent=t; alert('Ticker SENT to Viewers: '+t);}catch(e){alert('TICKER FAILED: '+e.message);}}
-async function addVideo(){try{let title=document.getElementById('vTitle').value,artist=document.getElementById('vArtist').value,url=document.getElementById('vUrl').value,audio=document.getElementById('vAudio').value; if(!title||!url) return alert('Fill Title + Link'); await db.collection('hitTV_queue').add({title,artist:artist||'Hit TV',url,type:detect(url),audio:audio||url,created:Date.now()}); alert('Added to Line-Up - Now press PLAY THIS NOW on it'); document.getElementById('vTitle').value='';document.getElementById('vUrl').value='';}catch(e){alert('ADD FAILED: '+e.message);}}
+async function addVideo(){try{let title=document.getElementById('vTitle').value,artist=document.getElementById('vArtist').value,url=document.getElementById('vUrl').value,audio=document.getElementById('vAudio').value; if(!title||!url) return alert('Fill Title + Link'); await db.collection('hitTV_queue').add({title,artist:artist||'Hit TV',url,type:detect(url),audio:audio||url,created:Date.now()}); alert('Added to Line-Up - TV Loop will play it automatically'); document.getElementById('vTitle').value='';document.getElementById('vUrl').value='';}catch(e){alert('ADD FAILED: '+e.message);}}
 async function addProgram(){try{let title=document.getElementById('pTitle').value,url=document.getElementById('pUrl').value,time=document.getElementById('pTime').value; if(!title||!url||!time) return alert('Fill all'); await db.collection('hitTV_programs').add({title,url,type:detect(url),time,created:Date.now()}); alert('Program Set for '+time+' EAT');}catch(e){alert('PROGRAM FAILED: '+e.message);}}
 async function addAudio(){try{let title=document.getElementById('aTitle').value,artist=document.getElementById('aArtist').value,url=document.getElementById('aUrl').value; let file=document.getElementById('aFile').files[0]; if(file){let ref=storage.ref('audio/'+Date.now()+'_'+file.name); await ref.put(file); url=await ref.getDownloadURL();} if(!title||!url) return alert('Fill Title + MP3 Link or Choose File'); await db.collection('hitTV_audio').add({title,artist:artist||'Hit TV',url,created:Date.now()}); alert('Audio Added');}catch(e){alert('AUDIO FAILED: '+e.message);}}
 async function sendNotif(){try{let title=document.getElementById('nTitle').value,text=document.getElementById('nText').value; if(!title||!text) return alert('Fill Title + Message'); await db.collection('hitTV_notif').add({title,text,time:Date.now()}); alert('Notification SENT to all Viewers: '+title); document.getElementById('nTitle').value=''; document.getElementById('nText').value='';}catch(e){alert('NOTIF FAILED: '+e.message);}}
 async function del(coll,id){if(confirm('Delete?')){try{await db.collection(coll).doc(id).delete();}catch(e){alert('DELETE FAILED: '+e.message);}}}
-// PLAY THIS NOW - FIXED V2 - ID ONLY, NO BROKEN JSON, WITH STEP ALERTS
-async function playNow(id){
-  alert('Step 1: Finding video...');
-  try{
-    let doc=await db.collection('hitTV_queue').doc(id).get();
-    if(!doc.exists){ alert('Step 1 FAILED: Video not found - Refresh Admin'); return; }
-    let v=doc.data();
-    alert('Step 2: Found '+v.title+' - Sending to Viewers...');
-    let force=Date.now();
-    await db.collection('hitTV').doc('live').set({status:'play',camera:false,mode:'queue',url:v.url,link:v.url,title:v.title,artist:v.artist||'Hit TV',desc:v.artist||'',type:v.type||detect(v.url||''),audio:v.audio||v.url,force:force,currentId:id,updated:force},{merge:true});
-    alert('Step 3 DONE: NOW PLAYING on Viewers: '+v.title+' - Open Viewers NOW');
-  }catch(e){alert('PLAY FAILED: '+e.message);}
+// ===== REAL TV LOOP IN ADMIN - REPLACES PLAY THIS NOW =====
+async function playLoopItem(index){
+  if(!adminLoopOn) return;
+  if(!adminQueue.length) { document.getElementById('nowPlayingAdmin').textContent='Line-Up is empty - Add videos first'; adminLoopOn=false; return; }
+  if(index>=adminQueue.length) index=0;
+  adminLoopIndex=index;
+  let v=adminQueue[index];
+  adminCurrentId=v.id;
+  let startedAt=Date.now();
+  let force=Date.now();
+  await db.collection('hitTV').doc('live').set({status:'play',camera:false,mode:'queue',url:v.url,link:v.url,title:v.title,artist:v.artist||'Hit TV',desc:v.artist||'',type:v.type||detect(v.url||''),audio:v.audio||v.url,force:force,startedAt:startedAt,currentId:v.id,currentIndex:index,updated:force},{merge:true});
+  document.getElementById('nowPlayingAdmin').textContent='📺 NOW ON TV: '+(index+1)+'/'+adminQueue.length+' - '+v.title+' - Next song auto plays';
+  renderAdminQueue();
+  if(adminLoopTimer) clearTimeout(adminLoopTimer);
+  let durationSec=180;
+  if(v.type!=='youtube' && v.url){
+    try{
+      let tmp=document.createElement('video'); tmp.preload='metadata'; tmp.src=v.url;
+      await new Promise(res=>{ tmp.onloadedmetadata=()=>res(); tmp.onerror=()=>res(); setTimeout(res,3000); });
+      if(tmp.duration && isFinite(tmp.duration)) durationSec=Math.ceil(tmp.duration);
+    }catch(e){}
+  }
+  adminLoopTimer=setTimeout(()=>{ if(adminLoopOn) playLoopItem(adminLoopIndex+1); }, durationSec*1000);
+}
+function startTVLoop(){
+  if(!adminQueue.length) return alert('Add videos to Line-Up first');
+  adminLoopOn=true;
+  adminLoopIndex=0;
+  playLoopItem(0);
+  alert('TV LOOP STARTED - Line-Up will play forever, looping. Viewers join where it is.');
+}
+function stopTVLoop(){
+  adminLoopOn=false;
+  if(adminLoopTimer) clearTimeout(adminLoopTimer);
+  document.getElementById('nowPlayingAdmin').textContent='TV Loop is OFF';
+  alert('TV LOOP STOPPED');
+}
+function renderAdminQueue(){
+  document.getElementById('queueBox').innerHTML=adminQueue.length?adminQueue.map(v=>{
+    let isNow=v.id===adminCurrentId && adminLoopOn ? '<br><b style="color:#ffcc00">📺 NOW PLAYING ON TV</b>' : '';
+    return `<div class="card"><b>${v.title}</b><br><span class="small">${v.artist} - ${v.type}</span><br><span class="small">${v.url}</span>${isNow}<br><button class="red" onclick="del('hitTV_queue','${v.id}')">Delete From Line-Up</button></div>`;
+  }).join(''):'<p>Empty</p>';
 }
 async function approveArtist(id){
   try{
@@ -77,7 +111,7 @@ async function approveArtist(id){
   }catch(e){alert('APPROVE FAILED: '+e.message);}
 }
 async function replyComment(id,name){let txt=prompt('Reply to '+name+':'); if(!txt) return; try{await db.collection('hitTV_notif').add({title:'Admin Reply to '+name,text:txt,time:Date.now()}); alert('Reply sent');}catch(e){alert('REPLY FAILED: '+e.message);}}
-db.collection('hitTV_queue').onSnapshot(s=>{document.getElementById('queueBox').innerHTML=s.empty?'<p>Empty</p>':s.docs.map(d=>{let v=d.data(); return `<div class="card"><b>${v.title}</b><br><span class="small">${v.artist} - ${v.type}</span><br><span class="small">${v.url}</span><div class="flex"><button class="green" onclick="playNow('${d.id}')">▶ PLAY THIS NOW</button></div><button class="red" onclick="del('hitTV_queue','${d.id}')">Delete From Line-Up</button></div>`}).join('');},e=>{document.getElementById('queueBox').innerHTML='Error: '+e.message;});
+db.collection('hitTV_queue').onSnapshot(s=>{adminQueue=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.created||0)-(b.created||0)); renderAdminQueue();},e=>{document.getElementById('queueBox').innerHTML='Error: '+e.message;});
 db.collection('hitTV_programs').onSnapshot(s=>{document.getElementById('programBox').innerHTML=s.empty?'<p>No programs</p>':s.docs.map(d=>{let p=d.data(); return `<div class="card"><b>${p.title} - ${p.time} EAT</b><br><span class="small">${p.url}</span><button class="red" onclick="del('hitTV_programs','${d.id}')">Delete Program</button></div>`}).join('');});
 db.collection('hitTV_audio').onSnapshot(s=>{document.getElementById('audioBox').innerHTML=s.docs.map(d=>{let a=d.data(); return `<div class="card"><b>${a.title} - ${a.artist}</b><button class="red" onclick="del('hitTV_audio','${d.id}')">Delete Audio</button></div>`}).join('');});
 db.collection('hitTV_artist').onSnapshot(s=>{document.getElementById('artistBox').innerHTML=s.empty?'<p>No submissions</p>':s.docs.map(d=>{let a=d.data(); return `<div class="card"><b>${a.name} - ${a.title}</b><br><span class="small">Phone: ${a.phone||''} - Link: ${a.link}</span><div class="flex"><button class="green" onclick="approveArtist('${d.id}')">Approve</button><button class="red" onclick="del('hitTV_artist','${d.id}')">Reject</button></div></div>`}).join('');});

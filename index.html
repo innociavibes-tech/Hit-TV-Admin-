@@ -175,4 +175,59 @@ db.collection('hitTV').doc('live').onSnapshot(d=>{if(d.exists){let v=d.data(); a
 let stream=null;
 async function startCamera(){try{stream=await navigator.mediaDevices.getUserMedia({video:true,audio:true}); document.getElementById('camPreview').srcObject=stream; document.getElementById('camPreview').style.display='block'; await db.collection('hitTV').doc('live').set({camera:true,mode:'camera'},{merge:true}); alert('Camera LIVE');}catch(e){alert('Camera blocked');}}
 async function stopCamera(){if(stream) stream.getTracks().forEach(t=>t.stop()); document.getElementById('camPreview').style.display='none'; await db.collection('hitTV').doc('live').set({camera:false,mode:'queue'},{merge:true});}
-</script></body></html>
+</script>
+
+<!-- ===== ADD ONLY - ADMIN FIXES - DID NOT TOUCH ANY OLD CODE ABOVE - NO REFRESH ===== -->
+<script>
+(function(){
+  try{
+    // NO REFRESH: block any reload that old code might trigger
+    // We do NOT call location.reload anywhere in ADD ONLY.
+
+    // 1. Add "Send to ONE viewer" input under Send Notification (ADD ONLY, not editing old)
+    var nBtn = document.querySelector('button[onclick="sendNotif()"]');
+    if(nBtn && !document.getElementById('nToOne')){
+      var inp=document.createElement('input');
+      inp.id='nToOne'; inp.placeholder='Send to ONE viewer name ONLY - leave empty for ALL (e.g John)';
+      nBtn.parentNode.insertBefore(inp, nBtn);
+    }
+
+    // 2. Override sendNotif ONLY by wrapping: if nToOne has name, save with 'to' field
+    // We keep old sendNotif, but we intercept the button click first
+    if(nBtn){
+      nBtn.addEventListener('click', function(e){
+        // Stop old handler from also sending to ALL when we want ONE
+        // We do this by checking nToOne - if filled, we send private and prevent old double-send
+        var toOne=document.getElementById('nToOne');
+        if(toOne && toOne.value.trim()){
+          e.stopImmediatePropagation();
+          e.preventDefault();
+          var title=document.getElementById('nTitle').value;
+          var text=document.getElementById('nText').value;
+          if(!title||!text) return alert('Fill Title + Message');
+          db.collection('hitTV_notif').add({title:title,text:text,to:toOne.value.trim(),time:Date.now()}).then(function(){
+            alert('Sent ONLY to '+toOne.value.trim());
+            document.getElementById('nTitle').value=''; document.getElementById('nText').value=''; toOne.value='';
+          });
+        }
+      }, true);
+    }
+
+    // 3. Private Reply: inject Reply button under each comment in commentBox
+    // Old commentBox had no button. We add it without touching old render.
+    var commentObs=new MutationObserver(function(){
+      try{
+        var box=document.getElementById('commentBox');
+        if(!box) return;
+        var cards=box.querySelectorAll('.card');
+        cards.forEach(function(card){
+          if(card.querySelector('.hitTV-replyBtn')) return;
+          var bEl=card.querySelector('b');
+          if(!bEl) return;
+          var viewerName=bEl.textContent.trim();
+          var btn=document.createElement('button');
+          btn.className='hitTV-replyBtn';
+          btn.style.background='#ffcc00'; btn.style.color='#000';
+          btn.textContent='↩ Reply to '+viewerName+' (Private)';
+          btn.onclick=function(){
+            v

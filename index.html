@@ -1,1 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Hit TV Admin by Inno</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:Arial,Helvetica,sans-serif}
+body{background:#000;color:#fff;overflow-x:hidden;padding-bottom:70px}
+.topbar{background:#000;padding:12px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100;border-bottom:1px solid #222}
+.topbar h1{font-size:18px}.topbar h1 span{color:#1e3a8a}
+.topbar button{background:#111;color:#fff;border:1px solid #333;padding:8px 12px;border-radius:20px;font-weight:700}
+.card{background:#0a0a0a;border:1px solid #222;border-radius:14px;padding:12px;margin:10px}
+input,select,textarea{width:100%;background:#111;color:#fff;border:1px solid #333;border-radius:10px;padding:11px;margin-top:7px;font-size:15px}
+.btn{width:100%;background:#1e3a8a;color:#fff;border:none;padding:13px;border-radius:12px;font-weight:800;margin-top:9px;font-size:15px;cursor:pointer}
+.btn2{background:#222}.btnRed{background:#b91c1c}
+.btnSmall{background:#222;color:#fff;border:1px solid #333;padding:7px 10px;border-radius:10px;font-weight:700;font-size:13px;margin-top:5px;margin-right:5px}
+.btnSmallRed{background:#b91c1c;color:#fff;border:none;padding:7px 10px;border-radius:10px;font-weight:700;font-size:13px;margin-top:5px;margin-right:5px}
+.bottomNav{position:fixed;left:0;right:0;bottom:0;z-index:200;background:#0a0a0a;border-top:1px solid #333;display:flex;padding:6px 4px calc(6px + env(safe-area-inset-bottom))}
+.bottomNav button{flex:1;background:transparent;border:none;color:#aaa;padding:10px 2px;font-size:12px;font-weight:700;line-height:1.2}
+.bottomNav button.active{color:#fff;background:#1e3a8a;border-radius:12px}
+.bottomNav button span{display:block;font-size:18px}
+.item{background:#111;border:1px solid #222;border-radius:12px;padding:10px;margin-top:8px}
+.item b{font-size:14px;word-break:break-all}.muted{color:#aaa;font-size:13px}
+.row{display:flex;gap:8px}.row>*{flex:1}
+.hidden{display:none!important}
+body.light{background:#fff;color:#000}.light .card,.light .item{background:#f2f2f2;border-color:#ddd;color:#000}
+.light input,.light select,.light textarea{background:#fff;color:#000;border-color:#ccc}
+.light .topbar{background:#fff;color:#000}.light .bottomNav{background:#fff;border-color:#ddd}.light .bottomNav button{color:#666}.light .bottomNav button.active{color:#fff}
+.pageHead{padding:14px 10px 4px}.pageHead h2{font-size:20px}
+.toggle{display:flex;justify-content:space-between;align-items:center;background:#111;border:1px solid #222;border-radius:12px;padding:12px;margin-top:8px}
+.switch{width:52px;height:28px;background:#333;border-radius:20px;position:relative;cursor:pointer}
+.switch:after{content:"";position:absolute;width:22px;height:22px;background:#fff;border-radius:50%;top:3px;left:3px;transition:.2s}
+.switch.on{background:#1e3a8a}.switch.on:after{left:27px}
+</style>
+</head>
+<body>
+<div class="topbar"><h1>Hit TV <span>Admin</span></h1><div><button onclick="toggleTheme()">Theme</button></div></div>
 
+<!-- PASSWORD GATE -->
+<div id="passGate" class="card">
+  <h2>Admin Login</h2><p class="muted">Enter Admin Password to open Admin Panel.</p>
+  <input id="adminPass" type="password" placeholder="Enter password...">
+  <button class="btn" onclick="enterAdmin()">Enter Admin Panel</button>
+  <p class="muted" style="margin-top:8px">Password is saved on this phone only.</p>
+</div>
+
+<div id="adminMain" class="hidden">
+  <!-- HOME / LIVE -->
+  <div id="a-home">
+    <div class="card"><h3>🔴 LIVE CONTROL</h3><p class="muted">Now Playing: <b id="nowPlayingAdmin">-</b></p>
+      <input id="liveUrl" placeholder="YouTube / MP4 Link">
+      <input id="liveTitle" placeholder="Title - e.g. Hit Song">
+      <input id="liveDetail" placeholder="Detail - e.g. Artist Name">
+      <button class="btn" onclick="goLive()">GO LIVE</button>
+      <button class="btn btnRed" onclick="stopLive()">STOP LIVE</button>
+    </div>
+    <div class="card"><h3>📝 TICKER - Moving Text</h3>
+      <input id="tickerInput" placeholder="Welcome to Hit TV by Inno...">
+      <button class="btn" onclick="saveTicker()">Update Ticker</button>
+    </div>
+    <div class="card"><h3>📋 QUEUE LIST - Waiting To Play</h3>
+      <input id="qUrl" placeholder="YouTube / MP4 Link">
+      <input id="qTitle" placeholder="Title">
+      <input id="qDetail" placeholder="Detail">
+      <button class="btn" onclick="addQueue()">Add To Queue</button>
+      <div id="adminQueue"></div>
+    </div>
+  </div>
+
+  <!-- COMMENTS -->
+  <div id="a-comments" class="hidden">
+    <div class="pageHead"><h2>Comments</h2><p class="muted">From Viewers</p></div>
+    <div class="card"><div id="adminComments"></div></div>
+  </div>
+
+  <!-- NOTIFICATIONS -->
+  <div id="a-notif" class="hidden">
+    <div class="pageHead"><h2>Notifications</h2><p class="muted">Send to all viewers</p></div>
+    <div class="card"><input id="notifText" placeholder="Write notification..."><button class="btn" onclick="sendNotif()">Send Notification</button><div id="adminNotifs"></div></div>
+  </div>
+
+  <!-- AUDIO -->
+  <div id="a-audio" class="hidden">
+    <div class="pageHead"><h2>Audio Streams</h2><p class="muted">Add audio songs</p></div>
+    <div class="card"><input id="audioTitle" placeholder="Audio Title"><input id="audioUrl" placeholder="Audio Link"><button class="btn" onclick="addAudio()">Add Audio</button><div id="adminAudio"></div></div>
+  </div>
+
+  <!-- ARTIST + FEEDBACK + USERS -->
+  <div id="a-more" class="hidden">
+    <div class="pageHead"><h2>Artist + Feedback + Users</h2></div>
+    <div class="card"><h3>⭐ Artist Submissions</h3><div id="adminArtist"></div></div>
+    <div class="card"><h3>💬 Feedback</h3><div id="adminFeedback"></div></div>
+    <div class="card"><h3>👥 Users Online</h3><div id="adminUsers"></div></div>
+  </div>
+
+  <div class="bottomNav" id="bottomNav">
+    <button class="active" onclick="aTab('home',this)"><span>⌂</span>Live</button>
+    <button onclick="aTab('comments',this)"><span>◎</span>Comments</button>
+    <button onclick="aTab('notif',this)"><span>🔔</span>Notif</button>
+    <button onclick="aTab('audio',this)"><span>♫</span>Audio</button>
+    <button onclick="aTab('more',this)"><span>☆</span>More</button>
+  </div>
+</div>
+
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {getDatabase,ref,set,push,onValue,update,remove,get} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+const firebaseConfig = {
+  apiKey: "AIzaSyBT9bXCGb6WgriW1wodo6IeRKOUQ5jdCes",
+  authDomain: "hit-tv-app-40fb9.firebaseapp.com",
+  databaseURL: "https://hit-tv-app-40fb9-default-rtdb.firebaseio.com",
+  projectId: "hit-tv-app-40fb9",
+  storageBucket: "hit-tv-app-40fb9.firebasestorage.app",
+  messagingSenderId: "740828744097",
+  appId: "1:740828744097:web:49104b3522d02de64ce3e0"
+};
+const app=initializeApp(firebaseConfig); const db=getDatabase(app);
+const ADMIN_PASS="ETV admin 2026";
+function showAdmin(){ document.getElementById('passGate').classList.add('hidden'); document.getElementById('adminMain').classList.remove('hidden'); }
+if(localStorage.getItem('hitv_admin')==="1"){ showAdmin(); }
+window.enterAdmin=()=>{ let p=document.getElementById('adminPass').value; if(p===ADMIN_PASS){ localStorage.setItem('hitv_admin','1'); showAdmin(); } else alert('Wrong Password Bro'); };
+window.aTab=(id,el)=>{ ['home','comments','notif','audio','more'].forEach(x=>document.getElementById('a-'+x).classList.add('hidden')); document.getElementById('a-'+id).classList.remove('hidden'); document.querySelectorAll('#bottomNav button').forEach(b=>b.classList.remove('active')); if(el) el.classList.add('active'); window.scrollTo(0,0); };
+window.toggleTheme=()=>{document.body.classList.toggle('light');};
+window.goLive=()=>{ let u=document.getElementById('liveUrl').value.trim(), t=document.getElementById('liveTitle').value.trim(), d=document.getElementById('liveDetail').value.trim(); if(!u) return alert('Put Link'); set(ref(db,'live'),{url:u,title:t,detail:d}); alert('Now LIVE'); };
+window.stopLive=()=>{ set(ref(db,'live'),{url:"",title:"",detail:""}); alert('Live Stopped'); };
+window.saveTicker=()=>{ let t=document.getElementById('tickerInput').value.trim(); if(!t) return; set(ref(db,'ticker'),{text:t}); alert('Ticker Updated'); };
+window.addQueue=()=>{ let u=document.getElementById('qUrl').value.trim(), t=document.getElementById('qTitle').value.trim(), d=document.getElementById('qDetail').value.trim(); if(!u) return alert('Put Link'); push(ref(db,'lineup'),{url:u,title:t,detail:d}); document.getElementById('qUrl').value=''; document.getElementById('qTitle').value=''; document.getElementById('qDetail').value=''; };
+window.sendNotif=()=>{ let t=document.getElementById('notifText').value.trim(); if(!t) return; push(ref(db,'notifications'),{text:t,time:Date.now()}); document.getElementById('notifText').value=''; };
+window.addAudio=()=>{ let t=document.getElementById('audioTitle').value.trim(), u=document.getElementById('audioUrl').value.trim(); if(!t||!u) return alert('Fill all'); push(ref(db,'audioStreams'),{title:t,url:u}); };
+window.del=(path)=>{ if(confirm('Delete?')) remove(ref(db,path)); };
+window.playThis=(u,t,d)=>{ set(ref(db,'live'),{url:u,title:t,detail:d}); alert('Now Playing: '+t); };
+window.replyComment=(key,name)=>{ let r=prompt('Reply to '+name+':'); if(r!==null) update(ref(db,'comments/'+key),{reply:r}); };
+onValue(ref(db,'live'),s=>{ let d=s.val(); document.getElementById('nowPlayingAdmin').innerText=d?(d.title||d.url):'-'; });
+onValue(ref(db,'lineup'),s=>{ let v=s.val()||{}; let h=""; Object.entries(v).forEach(([k,it])=>{ h+=`<div class="item"><b>${it.title||it.url}</b><div class="muted">${it.url}</div><button class="btnSmall" onclick="playThis('${it.url.replace(/'/g,"")}','${(it.title||'').replace(/'/g,"")}','${(it.detail||'').replace(/'/g,"")}')">Play Now</button><button class="btnSmallRed" onclick="del('lineup/${k}')">Delete</button></div>`; }); document.getElementById('adminQueue').innerHTML=h||'No songs in queue'; });
+onValue(ref(db,'comments'),s=>{ let v=s.val()||{}; let h=""; Object.entries(v).forEach(([k,c])=>{ h+=`<div class="item"><b>${c.name}:</b> ${c.text}<div class="muted">${c.reply?'Admin Reply: '+c.reply:''}</div><button class="btnSmall" onclick="replyComment('${k}','${c.name}')">Reply</button><button class="btnSmallRed" onclick="del('comments/${k}')">Delete</button></div>`; }); document.getElementById('adminComments').innerHTML=h||'No comments'; });
+onValue(ref(db,'notifications'),s=>{ let v=s.val()||{}; let h=""; Object.entries(v).reverse().forEach(([k,n])=>{ h+=`<div class="item">${n.text}<br><button class="btnSmallRed" onclick="del('notifications/${k}')">Delete</button></div>`; }); document.getElementById('adminNotifs').innerHTML=h||'No notifications'; });
+onValue(ref(db,'audioStreams'),s=>{ let v=s.val()||{}; let h=""; Object.entries(v).forEach(([k,a])=>{ h+=`<div class="item"><b>${a.title}</b><div class="muted">${a.url}</div><button class="btnSmallRed" onclick="del('audioStreams/${k}')">Delete</button></div>`; }); document.getElementById('adminAudio').innerHTML=h||'No audio yet'; });
+onValue(ref(db,'artistSubmissions'),s=>{ let v=s.val()||{}; let h=""; Object.entries(v).forEach(([k,a])=>{ h+=`<div class="item"><b>${a.artist}</b><div class="muted">${a.link}</div><button class="btnSmallRed" onclick="del('artistSubmissions/${k}')">Delete</button></div>`; }); document.getElementById('adminArtist').innerHTML=h||'No submissions'; });
+onValue(ref(db,'feedback'),s=>{ let v=s.val()||{}; let h=""; Object.entries(v).forEach(([k,f])=>{ h+=`<div class="item"><b>${f.name}:</b> ${f.text}<br><button class="btnSmallRed" onclick="del('feedback/${k}')">Delete</button></div>`; }); document.getElementById('adminFeedback').innerHTML=h||'No feedback'; });
+onValue(ref(db,'users'),s=>{ let v=s.val()||{}; let h=""; Object.entries(v).forEach(([k,u])=>{ h+=`<div class="item"><b>${u.name}</b> - ${u.online?'🟢 Online':'⚪ Offline'}<div class="muted">Last: ${new Date(u.lastSeen||Date.now()).toLocaleString()}</div></div>`; }); document.getElementById('adminUsers').innerHTML=h||'No users yet'; });
+</script>
+</body>
+        </html>

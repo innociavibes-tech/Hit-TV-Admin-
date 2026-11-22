@@ -13,7 +13,7 @@ body{background:#000;color:#fff;overflow-x:hidden;padding-bottom:70px}
 .card{background:#0a0a0a;border:1px solid #222;border-radius:14px;padding:12px;margin:10px}
 input,select,textarea{width:100%;background:#111;color:#fff;border:1px solid #333;border-radius:10px;padding:11px;margin-top:7px;font-size:15px}
 .btn{width:100%;background:#1e3a8a;color:#fff;border:none;padding:13px;border-radius:12px;font-weight:800;margin-top:9px;font-size:15px;cursor:pointer}
-.btn2{background:#222}.btnRed{background:#b91c1c}
+.btn2{background:#222}.btnRed{background:#b91c1c}.btnGreen{background:#15803d}
 .btnSmall{background:#222;color:#fff;border:1px solid #333;padding:7px 10px;border-radius:10px;font-weight:700;font-size:13px;margin-top:5px;margin-right:5px}
 .btnSmallRed{background:#b91c1c;color:#fff;border:none;padding:7px 10px;border-radius:10px;font-weight:700;font-size:13px;margin-top:5px;margin-right:5px}
 .bottomNav{position:fixed;left:0;right:0;bottom:0;z-index:200;background:#0a0a0a;border-top:1px solid #333;display:flex;padding:6px 4px calc(6px + env(safe-area-inset-bottom))}
@@ -28,25 +28,16 @@ body.light{background:#fff;color:#000}.light .card,.light .item{background:#f2f2
 .light input,.light select,.light textarea{background:#fff;color:#000;border-color:#ccc}
 .light .topbar{background:#fff;color:#000}.light .bottomNav{background:#fff;border-color:#ddd}.light .bottomNav button{color:#666}.light .bottomNav button.active{color:#fff}
 .pageHead{padding:14px 10px 4px}.pageHead h2{font-size:20px}
-.toggle{display:flex;justify-content:space-between;align-items:center;background:#111;border:1px solid #222;border-radius:12px;padding:12px;margin-top:8px}
-.switch{width:52px;height:28px;background:#333;border-radius:20px;position:relative;cursor:pointer}
-.switch:after{content:"";position:absolute;width:22px;height:22px;background:#fff;border-radius:50%;top:3px;left:3px;transition:.2s}
-.switch.on{background:#1e3a8a}.switch.on:after{left:27px}
 </style>
 </head>
 <body>
 <div class="topbar"><h1>Hit TV <span>Admin</span></h1><div><button onclick="toggleTheme()">Theme</button></div></div>
-
-<!-- PASSWORD GATE -->
 <div id="passGate" class="card">
   <h2>Admin Login</h2><p class="muted">Enter Admin Password to open Admin Panel.</p>
   <input id="adminPass" type="password" placeholder="Enter password...">
   <button class="btn" onclick="enterAdmin()">Enter Admin Panel</button>
-  <p class="muted" style="margin-top:8px">Password is saved on this phone only.</p>
 </div>
-
 <div id="adminMain" class="hidden">
-  <!-- HOME / LIVE -->
   <div id="a-home">
     <div class="card"><h3>🔴 LIVE CONTROL</h3><p class="muted">Now Playing: <b id="nowPlayingAdmin">-</b></p>
       <input id="liveUrl" placeholder="YouTube / MP4 Link">
@@ -55,11 +46,23 @@ body.light{background:#fff;color:#000}.light .card,.light .item{background:#f2f2
       <button class="btn" onclick="goLive()">GO LIVE</button>
       <button class="btn btnRed" onclick="stopLive()">STOP LIVE</button>
     </div>
+    <div class="card"><h3>📅 SET PROGRAM - EAT Time - Auto Play</h3><p class="muted">Example: Time 20:00 = 8pm EAT. It will play every day at that time until you delete it.</p>
+      <input id="progName" placeholder="Program Name - e.g. Evening News">
+      <input id="progUrl" placeholder="YouTube / MP4 Link">
+      <input id="progTitle" placeholder="Title">
+      <input id="progTime" type="time" value="20:00">
+      <input id="progDuration" type="number" placeholder="Duration in Minutes - e.g. 30" value="30">
+      <button class="btn btnGreen" onclick="addProgram()">Save Program</button>
+      <div id="adminPrograms"></div>
+    </div>
     <div class="card"><h3>📝 TICKER - Moving Text</h3>
       <input id="tickerInput" placeholder="Welcome to Hit TV by Inno...">
       <button class="btn" onclick="saveTicker()">Update Ticker</button>
     </div>
-    <div class="card"><h3>📋 QUEUE LIST - Waiting To Play</h3>
+    <div class="card"><h3>📋 QUEUE LIST / LINEUP</h3>
+      <button class="btn btnGreen" onclick="startLineup()">▶ START LINEUP - Play All In Loop</button>
+      <button class="btn btnRed" onclick="stopLineup()">■ STOP LINEUP</button>
+      <p class="muted" style="margin-top:6px">Add songs below, then press START LINEUP once. They play 1-2-3-1-2-3 even if you go offline.</p>
       <input id="qUrl" placeholder="YouTube / MP4 Link">
       <input id="qTitle" placeholder="Title">
       <input id="qDetail" placeholder="Detail">
@@ -67,33 +70,24 @@ body.light{background:#fff;color:#000}.light .card,.light .item{background:#f2f2
       <div id="adminQueue"></div>
     </div>
   </div>
-
-  <!-- COMMENTS -->
   <div id="a-comments" class="hidden">
     <div class="pageHead"><h2>Comments</h2><p class="muted">From Viewers</p></div>
     <div class="card"><div id="adminComments"></div></div>
   </div>
-
-  <!-- NOTIFICATIONS -->
   <div id="a-notif" class="hidden">
     <div class="pageHead"><h2>Notifications</h2><p class="muted">Send to all viewers</p></div>
     <div class="card"><input id="notifText" placeholder="Write notification..."><button class="btn" onclick="sendNotif()">Send Notification</button><div id="adminNotifs"></div></div>
   </div>
-
-  <!-- AUDIO -->
   <div id="a-audio" class="hidden">
     <div class="pageHead"><h2>Audio Streams</h2><p class="muted">Add audio songs</p></div>
     <div class="card"><input id="audioTitle" placeholder="Audio Title"><input id="audioUrl" placeholder="Audio Link"><button class="btn" onclick="addAudio()">Add Audio</button><div id="adminAudio"></div></div>
   </div>
-
-  <!-- ARTIST + FEEDBACK + USERS -->
   <div id="a-more" class="hidden">
     <div class="pageHead"><h2>Artist + Feedback + Users</h2></div>
     <div class="card"><h3>⭐ Artist Submissions</h3><div id="adminArtist"></div></div>
     <div class="card"><h3>💬 Feedback</h3><div id="adminFeedback"></div></div>
     <div class="card"><h3>👥 Users Online</h3><div id="adminUsers"></div></div>
   </div>
-
   <div class="bottomNav" id="bottomNav">
     <button class="active" onclick="aTab('home',this)"><span>⌂</span>Live</button>
     <button onclick="aTab('comments',this)"><span>◎</span>Comments</button>
@@ -102,7 +96,6 @@ body.light{background:#fff;color:#000}.light .card,.light .item{background:#f2f2
     <button onclick="aTab('more',this)"><span>☆</span>More</button>
   </div>
 </div>
-
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {getDatabase,ref,set,push,onValue,update,remove,get} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
@@ -120,19 +113,22 @@ const ADMIN_PASS="ETV admin 2026";
 function showAdmin(){ document.getElementById('passGate').classList.add('hidden'); document.getElementById('adminMain').classList.remove('hidden'); }
 if(localStorage.getItem('hitv_admin')==="1"){ showAdmin(); }
 window.enterAdmin=()=>{ let p=document.getElementById('adminPass').value; if(p===ADMIN_PASS){ localStorage.setItem('hitv_admin','1'); showAdmin(); } else alert('Wrong Password Bro'); };
-window.aTab=(id,el)=>{ ['home','comments','notif','audio','more'].forEach(x=>document.getElementById('a-'+x).classList.add('hidden')); document.getElementById('a-'+id).classList.remove('hidden'); document.querySelectorAll('#bottomNav button').forEach(b=>b.classList.remove('active')); if(el) el.classList.add('active'); window.scrollTo(0,0); };
+window.aTab=function(id,el){ ['home','comments','notif','audio','more'].forEach(x=>{ let d=document.getElementById('a-'+x); if(d) d.classList.add('hidden'); }); let show=document.getElementById('a-'+id); if(show) show.classList.remove('hidden'); document.querySelectorAll('#bottomNav button').forEach(b=>b.classList.remove('active')); if(el) el.classList.add('active'); window.scrollTo(0,0); };
 window.toggleTheme=()=>{document.body.classList.toggle('light');};
-window.goLive=()=>{ let u=document.getElementById('liveUrl').value.trim(), t=document.getElementById('liveTitle').value.trim(), d=document.getElementById('liveDetail').value.trim(); if(!u) return alert('Put Link'); set(ref(db,'live'),{url:u,title:t,detail:d}); alert('Now LIVE'); };
-window.stopLive=()=>{ set(ref(db,'live'),{url:"",title:"",detail:""}); alert('Live Stopped'); };
+window.goLive=()=>{ let u=document.getElementById('liveUrl').value.trim(), t=document.getElementById('liveTitle').value.trim(), d=document.getElementById('liveDetail').value.trim(); if(!u) return alert('Put Link'); set(ref(db,'queueState'),{playing:false}); set(ref(db,'live'),{url:u,title:t,detail:d,mode:'manual',startedAt:Date.now()}); alert('Now LIVE'); };
+window.stopLive=()=>{ set(ref(db,'queueState'),{playing:false}); set(ref(db,'live'),{url:"",title:"",detail:"",mode:'manual',startedAt:Date.now()}); alert('Live Stopped'); };
 window.saveTicker=()=>{ let t=document.getElementById('tickerInput').value.trim(); if(!t) return; set(ref(db,'ticker'),{text:t}); alert('Ticker Updated'); };
 window.addQueue=()=>{ let u=document.getElementById('qUrl').value.trim(), t=document.getElementById('qTitle').value.trim(), d=document.getElementById('qDetail').value.trim(); if(!u) return alert('Put Link'); push(ref(db,'lineup'),{url:u,title:t,detail:d}); document.getElementById('qUrl').value=''; document.getElementById('qTitle').value=''; document.getElementById('qDetail').value=''; };
+window.startLineup=()=>{ get(ref(db,'lineup')).then(s=>{ let v=s.val()||{}; let keys=Object.keys(v); if(!keys.length) return alert('Add songs first'); let first=v[keys[0]]; set(ref(db,'queueState'),{playing:true,index:0,startedAt:Date.now()}); set(ref(db,'live'),{url:first.url,title:first.title,detail:first.detail,mode:'queue',startedAt:Date.now(),queueIndex:0}); alert('LINEUP STARTED - Looping'); }); };
+window.stopLineup=()=>{ set(ref(db,'queueState'),{playing:false}); alert('Lineup Stopped'); };
+window.addProgram=()=>{ let n=document.getElementById('progName').value.trim(), u=document.getElementById('progUrl').value.trim(), t=document.getElementById('progTitle').value.trim(), tm=document.getElementById('progTime').value, dur=document.getElementById('progDuration').value||30; if(!u||!tm) return alert('Put Link + Time'); push(ref(db,'programs'),{name:n,title:t||n,detail:n,url:u,time:tm,duration:parseInt(dur),lastPlayedDate:""}); alert('Program Saved - Will play at '+tm+' EAT every day'); };
 window.sendNotif=()=>{ let t=document.getElementById('notifText').value.trim(); if(!t) return; push(ref(db,'notifications'),{text:t,time:Date.now()}); document.getElementById('notifText').value=''; };
 window.addAudio=()=>{ let t=document.getElementById('audioTitle').value.trim(), u=document.getElementById('audioUrl').value.trim(); if(!t||!u) return alert('Fill all'); push(ref(db,'audioStreams'),{title:t,url:u}); };
 window.del=(path)=>{ if(confirm('Delete?')) remove(ref(db,path)); };
-window.playThis=(u,t,d)=>{ set(ref(db,'live'),{url:u,title:t,detail:d}); alert('Now Playing: '+t); };
 window.replyComment=(key,name)=>{ let r=prompt('Reply to '+name+':'); if(r!==null) update(ref(db,'comments/'+key),{reply:r}); };
 onValue(ref(db,'live'),s=>{ let d=s.val(); document.getElementById('nowPlayingAdmin').innerText=d?(d.title||d.url):'-'; });
-onValue(ref(db,'lineup'),s=>{ let v=s.val()||{}; let h=""; Object.entries(v).forEach(([k,it])=>{ h+=`<div class="item"><b>${it.title||it.url}</b><div class="muted">${it.url}</div><button class="btnSmall" onclick="playThis('${it.url.replace(/'/g,"")}','${(it.title||'').replace(/'/g,"")}','${(it.detail||'').replace(/'/g,"")}')">Play Now</button><button class="btnSmallRed" onclick="del('lineup/${k}')">Delete</button></div>`; }); document.getElementById('adminQueue').innerHTML=h||'No songs in queue'; });
+onValue(ref(db,'programs'),s=>{ let v=s.val()||{}; let h=""; Object.entries(v).forEach(([k,p])=>{ h+=`<div class="item"><b>${p.name||p.title}</b> - ${p.time} EAT - ${p.duration} min<div class="muted">${p.url}</div><button class="btnSmallRed" onclick="del('programs/${k}')">Delete</button></div>`; }); document.getElementById('adminPrograms').innerHTML=h||'No programs yet'; });
+onValue(ref(db,'lineup'),s=>{ let v=s.val()||{}; let h=""; Object.entries(v).forEach(([k,it])=>{ h+=`<div class="item"><b>${it.title||it.url}</b><div class="muted">${it.url}</div><button class="btnSmallRed" onclick="del('lineup/${k}')">Delete</button></div>`; }); document.getElementById('adminQueue').innerHTML=h||'No songs in queue'; });
 onValue(ref(db,'comments'),s=>{ let v=s.val()||{}; let h=""; Object.entries(v).forEach(([k,c])=>{ h+=`<div class="item"><b>${c.name}:</b> ${c.text}<div class="muted">${c.reply?'Admin Reply: '+c.reply:''}</div><button class="btnSmall" onclick="replyComment('${k}','${c.name}')">Reply</button><button class="btnSmallRed" onclick="del('comments/${k}')">Delete</button></div>`; }); document.getElementById('adminComments').innerHTML=h||'No comments'; });
 onValue(ref(db,'notifications'),s=>{ let v=s.val()||{}; let h=""; Object.entries(v).reverse().forEach(([k,n])=>{ h+=`<div class="item">${n.text}<br><button class="btnSmallRed" onclick="del('notifications/${k}')">Delete</button></div>`; }); document.getElementById('adminNotifs').innerHTML=h||'No notifications'; });
 onValue(ref(db,'audioStreams'),s=>{ let v=s.val()||{}; let h=""; Object.entries(v).forEach(([k,a])=>{ h+=`<div class="item"><b>${a.title}</b><div class="muted">${a.url}</div><button class="btnSmallRed" onclick="del('audioStreams/${k}')">Delete</button></div>`; }); document.getElementById('adminAudio').innerHTML=h||'No audio yet'; });
@@ -141,4 +137,4 @@ onValue(ref(db,'feedback'),s=>{ let v=s.val()||{}; let h=""; Object.entries(v).f
 onValue(ref(db,'users'),s=>{ let v=s.val()||{}; let h=""; Object.entries(v).forEach(([k,u])=>{ h+=`<div class="item"><b>${u.name}</b> - ${u.online?'🟢 Online':'⚪ Offline'}<div class="muted">Last: ${new Date(u.lastSeen||Date.now()).toLocaleString()}</div></div>`; }); document.getElementById('adminUsers').innerHTML=h||'No users yet'; });
 </script>
 </body>
-        </html>
+  </html>

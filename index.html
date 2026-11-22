@@ -99,21 +99,13 @@ body.light{background:#fff;color:#000}.light .card,.light .item{background:#f2f2
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {getDatabase,ref,set,push,onValue,update,remove,get} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-const firebaseConfig = {
-  apiKey: "AIzaSyBT9bXCGb6WgriW1wodo6IeRKOUQ5jdCes",
-  authDomain: "hit-tv-app-40fb9.firebaseapp.com",
-  databaseURL: "https://hit-tv-app-40fb9-default-rtdb.firebaseio.com",
-  projectId: "hit-tv-app-40fb9",
-  storageBucket: "hit-tv-app-40fb9.firebasestorage.app",
-  messagingSenderId: "740828744097",
-  appId: "1:740828744097:web:49104b3522d02de64ce3e0"
-};
+const firebaseConfig = {apiKey:"AIzaSyBT9bXCGb6WgriW1wodo6IeRKOUQ5jdCes",authDomain:"hit-tv-app-40fb9.firebaseapp.com",databaseURL:"https://hit-tv-app-40fb9-default-rtdb.firebaseio.com",projectId:"hit-tv-app-40fb9",storageBucket:"hit-tv-app-40fb9.firebasestorage.app",messagingSenderId:"740828744097",appId:"1:740828744097:web:49104b3522d02de64ce3e0"};
 const app=initializeApp(firebaseConfig); const db=getDatabase(app);
 const ADMIN_PASS="ETV admin 2026";
 function showAdmin(){ document.getElementById('passGate').classList.add('hidden'); document.getElementById('adminMain').classList.remove('hidden'); }
 if(localStorage.getItem('hitv_admin')==="1"){ showAdmin(); }
 window.enterAdmin=()=>{ let p=document.getElementById('adminPass').value; if(p===ADMIN_PASS){ localStorage.setItem('hitv_admin','1'); showAdmin(); } else alert('Wrong Password Bro'); };
-window.aTab=function(id,el){ ['home','comments','notif','audio','more'].forEach(x=>{ let d=document.getElementById('a-'+x); if(d) d.classList.add('hidden'); }); let show=document.getElementById('a-'+id); if(show) show.classList.remove('hidden'); document.querySelectorAll('#bottomNav button').forEach(b=>b.classList.remove('active')); if(el) el.classList.add('active'); window.scrollTo(0,0); };
+window.aTab=(id,el)=>{ ['home','comments','notif','audio','more'].forEach(x=>document.getElementById('a-'+x).classList.add('hidden')); document.getElementById('a-'+id).classList.remove('hidden'); document.querySelectorAll('#bottomNav button').forEach(b=>b.classList.remove('active')); if(el) el.classList.add('active'); window.scrollTo(0,0); };
 window.toggleTheme=()=>{document.body.classList.toggle('light');};
 window.goLive=()=>{ let u=document.getElementById('liveUrl').value.trim(), t=document.getElementById('liveTitle').value.trim(), d=document.getElementById('liveDetail').value.trim(); if(!u) return alert('Put Link'); set(ref(db,'queueState'),{playing:false}); set(ref(db,'live'),{url:u,title:t,detail:d,mode:'manual',startedAt:Date.now()}); alert('Now LIVE'); };
 window.stopLive=()=>{ set(ref(db,'queueState'),{playing:false}); set(ref(db,'live'),{url:"",title:"",detail:"",mode:'manual',startedAt:Date.now()}); alert('Live Stopped'); };
@@ -137,4 +129,4 @@ onValue(ref(db,'feedback'),s=>{ let v=s.val()||{}; let h=""; Object.entries(v).f
 onValue(ref(db,'users'),s=>{ let v=s.val()||{}; let h=""; Object.entries(v).forEach(([k,u])=>{ h+=`<div class="item"><b>${u.name}</b> - ${u.online?'🟢 Online':'⚪ Offline'}<div class="muted">Last: ${new Date(u.lastSeen||Date.now()).toLocaleString()}</div></div>`; }); document.getElementById('adminUsers').innerHTML=h||'No users yet'; });
 </script>
 </body>
-                                                  </html>
+</html>

@@ -39,7 +39,7 @@ body.light{background:#fff;color:#000}.light .card,.light .item{background:#f2f2
 </div>
 <div id="adminMain" class="hidden">
   <div id="a-home">
-    <div class="card"><h3>🔴 LIVE CONTROL</h3><p class="muted">Now Playing: <b id="nowPlayingAdmin">-</b></p>
+    <div class="card"><h3>🔴 LIVE CONTROL</h3><p class="muted">Now Playing: <b id="nowPlayingAdmin">-</b></p><p class="muted" id="queuePosAdmin">Lineup: -</p>
       <input id="liveUrl" placeholder="YouTube / MP4 Link">
       <input id="liveTitle" placeholder="Title - e.g. Hit Song">
       <input id="liveDetail" placeholder="Detail - e.g. Artist Name">
@@ -61,8 +61,9 @@ body.light{background:#fff;color:#000}.light .card,.light .item{background:#f2f2
     </div>
     <div class="card"><h3>📋 QUEUE LIST / LINEUP</h3>
       <button class="btn btnGreen" onclick="startLineup()">▶ START LINEUP - Play All In Loop</button>
+      <div class="row"><button class="btn btn2" onclick="nextSong()">⏭ NEXT SONG - For All Viewers</button><button class="btn btn2" onclick="restartLineup()">↺ RESTART FROM SONG 1</button></div>
       <button class="btn btnRed" onclick="stopLineup()">■ STOP LINEUP</button>
-      <p class="muted" style="margin-top:6px">Add songs below, then press START LINEUP once. They play 1-2-3-1-2-3 even if you go offline.</p>
+      <p class="muted" style="margin-top:6px">Add songs below, then press START LINEUP once. They play 1-2-3-1-2-3 even if you go offline. Do NOT press START twice - it restarts to Song 1.</p>
       <input id="qUrl" placeholder="YouTube / MP4 Link">
       <input id="qTitle" placeholder="Title">
       <input id="qDetail" placeholder="Detail">
@@ -110,6 +111,7 @@ const firebaseConfig = {
 };
 const app=initializeApp(firebaseConfig); const db=getDatabase(app);
 const ADMIN_PASS="ETV admin 2026";
+let lineupCache={}, lineupKeys=[], currentQueueIndex=0, queuePlaying=false;
 function showAdmin(){ document.getElementById('passGate').classList.add('hidden'); document.getElementById('adminMain').classList.remove('hidden'); }
 if(localStorage.getItem('hitv_admin')==="1"){ showAdmin(); }
 window.enterAdmin=()=>{ let p=document.getElementById('adminPass').value; if(p===ADMIN_PASS){ localStorage.setItem('hitv_admin','1'); showAdmin(); } else alert('Wrong Password Bro'); };
@@ -119,22 +121,41 @@ window.goLive=()=>{ let u=document.getElementById('liveUrl').value.trim(), t=doc
 window.stopLive=()=>{ set(ref(db,'queueState'),{playing:false}); set(ref(db,'live'),{url:"",title:"",detail:"",mode:'manual',startedAt:Date.now()}); alert('Live Stopped'); };
 window.saveTicker=()=>{ let t=document.getElementById('tickerInput').value.trim(); if(!t) return; set(ref(db,'ticker'),{text:t}); alert('Ticker Updated'); };
 window.addQueue=()=>{ let u=document.getElementById('qUrl').value.trim(), t=document.getElementById('qTitle').value.trim(), d=document.getElementById('qDetail').value.trim(); if(!u) return alert('Put Link'); push(ref(db,'lineup'),{url:u,title:t,detail:d}); document.getElementById('qUrl').value=''; document.getElementById('qTitle').value=''; document.getElementById('qDetail').value=''; };
-window.startLineup=()=>{ get(ref(db,'lineup')).then(s=>{ let v=s.val()||{}; let keys=Object.keys(v); if(!keys.length) return alert('Add songs first'); let first=v[keys[0]]; set(ref(db,'queueState'),{playing:true,index:0,startedAt:Date.now()}); set(ref(db,'live'),{url:first.url,title:first.title,detail:first.detail,mode:'queue',startedAt:Date.now(),queueIndex:0}); alert('LINEUP STARTED - Looping'); }); };
-window.stopLineup=()=>{ set(ref(db,'queueState'),{playing:false}); alert('Lineup Stopped'); };
+function playQueueAt(idx){
+  if(!lineupKeys.length) return alert('Add songs first');
+  let i=((idx%lineupKeys.length)+lineupKeys.length)%lineupKeys.length;
+  let item=lineupCache[lineupKeys[i]];
+  currentQueueIndex=i;
+  set(ref(db,'queueState'),{playing:true,index:i,startedAt:Date.now()});
+  set(ref(db,'live'),{url:item.url,title:item.title,detail:item.detail,mode:'queue',startedAt:Date.now(),queueIndex:i});
+}
+window.startLineup=()=>{ 
+  get(ref(db,'queueState')).then(s=>{ let q=s.val();
+    if(q && q.playing){ if(!confirm('Lineup ALREADY playing at Song '+(q.index+1)+'. Press OK to RESTART from Song 1, Cancel to keep playing.')) return; }
+    playQueueAt(0); alert('LINEUP STARTED - Looping');
+  });
+};
+window.restartLineup=()=>{ if(confirm('Restart lineup from Song 1 for ALL viewers?')){ playQueueAt(0); } };
+window.nextSong=()=>{ 
+  get(ref(db,'live')).then(s=>{ let d=s.val()||{}; let cur=(typeof d.queueIndex==='number')?d.queueIndex:currentQueueIndex; playQueueAt(cur+1); });
+};
+window.stopLineup=()=>{ set(ref(db,'queueState'),{playing:false}); set(ref(db,'live'),{url:"",title:"",detail:"",mode:'manual',startedAt:Date.now()}); alert('Lineup Stopped'); };
 window.addProgram=()=>{ let n=document.getElementById('progName').value.trim(), u=document.getElementById('progUrl').value.trim(), t=document.getElementById('progTitle').value.trim(), tm=document.getElementById('progTime').value, dur=document.getElementById('progDuration').value||30; if(!u||!tm) return alert('Put Link + Time'); push(ref(db,'programs'),{name:n,title:t||n,detail:n,url:u,time:tm,duration:parseInt(dur),lastPlayedDate:""}); alert('Program Saved - Will play at '+tm+' EAT every day'); };
 window.sendNotif=()=>{ let t=document.getElementById('notifText').value.trim(); if(!t) return; push(ref(db,'notifications'),{text:t,time:Date.now()}); document.getElementById('notifText').value=''; };
 window.addAudio=()=>{ let t=document.getElementById('audioTitle').value.trim(), u=document.getElementById('audioUrl').value.trim(); if(!t||!u) return alert('Fill all'); push(ref(db,'audioStreams'),{title:t,url:u}); };
 window.del=(path)=>{ if(confirm('Delete?')) remove(ref(db,path)); };
 window.replyComment=(key,name)=>{ let r=prompt('Reply to '+name+':'); if(r!==null) update(ref(db,'comments/'+key),{reply:r}); };
-onValue(ref(db,'live'),s=>{ let d=s.val(); document.getElementById('nowPlayingAdmin').innerText=d?(d.title||d.url):'-'; });
+onValue(ref(db,'live'),s=>{ let d=s.val(); document.getElementById('nowPlayingAdmin').innerText=d?(d.title||d.url):'-'; if(d && d.mode==='queue' && typeof d.queueIndex==='number'){ currentQueueIndex=d.queueIndex; document.getElementById('queuePosAdmin').innerText='Lineup: Song '+(d.queueIndex+1)+' of '+lineupKeys.length; } });
+onValue(ref(db,'queueState'),s=>{ let q=s.val(); queuePlaying=!!(q && q.playing); if(q && typeof q.index==='number') currentQueueIndex=q.index; });
 onValue(ref(db,'programs'),s=>{ let v=s.val()||{}; let h=""; Object.entries(v).forEach(([k,p])=>{ h+=`<div class="item"><b>${p.name||p.title}</b> - ${p.time} EAT - ${p.duration} min<div class="muted">${p.url}</div><button class="btnSmallRed" onclick="del('programs/${k}')">Delete</button></div>`; }); document.getElementById('adminPrograms').innerHTML=h||'No programs yet'; });
-onValue(ref(db,'lineup'),s=>{ let v=s.val()||{}; let h=""; Object.entries(v).forEach(([k,it])=>{ h+=`<div class="item"><b>${it.title||it.url}</b><div class="muted">${it.url}</div><button class="btnSmallRed" onclick="del('lineup/${k}')">Delete</button></div>`; }); document.getElementById('adminQueue').innerHTML=h||'No songs in queue'; });
+onValue(ref(db,'lineup'),s=>{ lineupCache=s.val()||{}; lineupKeys=Object.keys(lineupCache); let h=""; Object.entries(lineupCache).forEach(([k,it],idx)=>{ h+=`<div class="item"><b>${idx+1}. ${it.title||it.url}</b><div class="muted">${it.url}</div><button class="btnSmall" onclick="playQueueAt(${idx})">Play This For All</button><button class="btnSmallRed" onclick="del('lineup/${k}')">Delete</button></div>`; }); document.getElementById('adminQueue').innerHTML=h||'No songs in queue'; });
 onValue(ref(db,'comments'),s=>{ let v=s.val()||{}; let h=""; Object.entries(v).forEach(([k,c])=>{ h+=`<div class="item"><b>${c.name}:</b> ${c.text}<div class="muted">${c.reply?'Admin Reply: '+c.reply:''}</div><button class="btnSmall" onclick="replyComment('${k}','${c.name}')">Reply</button><button class="btnSmallRed" onclick="del('comments/${k}')">Delete</button></div>`; }); document.getElementById('adminComments').innerHTML=h||'No comments'; });
 onValue(ref(db,'notifications'),s=>{ let v=s.val()||{}; let h=""; Object.entries(v).reverse().forEach(([k,n])=>{ h+=`<div class="item">${n.text}<br><button class="btnSmallRed" onclick="del('notifications/${k}')">Delete</button></div>`; }); document.getElementById('adminNotifs').innerHTML=h||'No notifications'; });
 onValue(ref(db,'audioStreams'),s=>{ let v=s.val()||{}; let h=""; Object.entries(v).forEach(([k,a])=>{ h+=`<div class="item"><b>${a.title}</b><div class="muted">${a.url}</div><button class="btnSmallRed" onclick="del('audioStreams/${k}')">Delete</button></div>`; }); document.getElementById('adminAudio').innerHTML=h||'No audio yet'; });
 onValue(ref(db,'artistSubmissions'),s=>{ let v=s.val()||{}; let h=""; Object.entries(v).forEach(([k,a])=>{ h+=`<div class="item"><b>${a.artist}</b><div class="muted">${a.link}</div><button class="btnSmallRed" onclick="del('artistSubmissions/${k}')">Delete</button></div>`; }); document.getElementById('adminArtist').innerHTML=h||'No submissions'; });
 onValue(ref(db,'feedback'),s=>{ let v=s.val()||{}; let h=""; Object.entries(v).forEach(([k,f])=>{ h+=`<div class="item"><b>${f.name}:</b> ${f.text}<br><button class="btnSmallRed" onclick="del('feedback/${k}')">Delete</button></div>`; }); document.getElementById('adminFeedback').innerHTML=h||'No feedback'; });
 onValue(ref(db,'users'),s=>{ let v=s.val()||{}; let h=""; Object.entries(v).forEach(([k,u])=>{ h+=`<div class="item"><b>${u.name}</b> - ${u.online?'🟢 Online':'⚪ Offline'}<div class="muted">Last: ${new Date(u.lastSeen||Date.now()).toLocaleString()}</div></div>`; }); document.getElementById('adminUsers').innerHTML=h||'No users yet'; });
+window.playQueueAt=playQueueAt;
 </script>
 </body>
-  </html>
+</html>

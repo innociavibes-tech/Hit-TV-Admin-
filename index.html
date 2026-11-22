@@ -28,10 +28,12 @@ body.light{background:#fff;color:#000}.light .card,.light .item{background:#f2f2
 .light input,.light select,.light textarea{background:#fff;color:#000;border-color:#ccc}
 .light .topbar{background:#fff;color:#000}.light .bottomNav{background:#fff;border-color:#ddd}.light .bottomNav button{color:#666}.light .bottomNav button.active{color:#fff}
 .pageHead{padding:14px 10px 4px}.pageHead h2{font-size:20px}
+#keeperBox{position:fixed;left:-9999px;top:-9999px;width:320px;height:180px;overflow:hidden;opacity:0;pointer-events:none}
 </style>
 </head>
 <body>
 <div class="topbar"><h1>Hit TV <span>Admin</span></h1><div><button onclick="toggleTheme()">Theme</button></div></div>
+<div id="keeperBox"><div id="keeperPlayer"></div></div>
 <div id="passGate" class="card">
   <h2>Admin Login</h2><p class="muted">Enter Admin Password to open Admin Panel.</p>
   <input id="adminPass" type="password" placeholder="Enter password...">
@@ -96,6 +98,7 @@ body.light{background:#fff;color:#000}.light .card,.light .item{background:#f2f2
     <button onclick="aTab('more',this)"><span>☆</span>More</button>
   </div>
 </div>
+<script src="https://www.youtube.com/iframe_api"></script>
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {getDatabase,ref,set,push,onValue,update,remove,get} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
@@ -118,9 +121,22 @@ window.sendNotif=()=>{ let t=document.getElementById('notifText').value.trim(); 
 window.addAudio=()=>{ let t=document.getElementById('audioTitle').value.trim(), u=document.getElementById('audioUrl').value.trim(); if(!t||!u) return alert('Fill all'); push(ref(db,'audioStreams'),{title:t,url:u}); };
 window.del=(path)=>{ if(confirm('Delete?')) remove(ref(db,path)); };
 window.replyComment=(key,name)=>{ let r=prompt('Reply to '+name+':'); if(r!==null) update(ref(db,'comments/'+key),{reply:r}); };
-onValue(ref(db,'live'),s=>{ let d=s.val(); document.getElementById('nowPlayingAdmin').innerText=d?(d.title||d.url):'-'; });
+let keeperPlayer=null, keeperKey="", lineupCacheA={}, lineupKeysA=[], queuePlaying=false, currentQueueIndexA=0, keeperNextTimer=null;
+function getYTIdA(url){ let m=(url||'').match(/(?:v=|youtu\.be\/|embed\/|shorts\/)([A-Za-z0-9_-]{11})/); return m?m[1]:null; }
+function keeperAdvance(){ if(!queuePlaying) return; if(keeperNextTimer) return; keeperNextTimer=setTimeout(()=>{ keeperNextTimer=null; if(!lineupKeysA.length) return; let ni=(currentQueueIndexA+1)%lineupKeysA.length; let item=lineupCacheA[lineupKeysA[ni]]; if(!item) return; set(ref(db,'queueState'),{playing:true,index:ni,startedAt:Date.now()}); set(ref(db,'live'),{url:item.url,title:item.title,detail:item.detail,mode:'queue',startedAt:Date.now(),queueIndex:ni}); },2000); }
+function keeperSync(d){
+  if(!d||!d.url||d.mode!=='queue'||!queuePlaying) return;
+  let key=d.url+'|'+(d.startedAt||0); if(key===keeperKey && keeperPlayer) return; keeperKey=key; currentQueueIndexA=d.queueIndex||0;
+  let yid=getYTIdA(d.url); if(!yid) return; let seekSec=d.startedAt?Math.floor((Date.now()-d.startedAt)/1000):0;
+  if(keeperPlayer){ try{keeperPlayer.destroy();}catch(e){} keeperPlayer=null; }
+  keeperPlayer=new YT.Player('keeperPlayer',{width:320,height:180,videoId:yid,playerVars:{autoplay:1,controls:0,disablekb:1,modestbranding:1,rel:0,playsinline:1,mute:1},events:{onReady:e=>{ e.target.mute(); if(seekSec>3){ try{e.target.seekTo(seekSec,true);}catch(err){} } e.target.playVideo(); },onStateChange:e=>{ if(e.data===0) keeperAdvance(); }}});
+}
+setInterval(()=>{ if(!navigator.onLine) return; get(ref(db,'live')).then(s=>{ let d=s.val(); if(d) keeperSync(d); }).catch(()=>{}); },5000);
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden){ get(ref(db,'live')).then(s=>{ let d=s.val(); if(d) keeperSync(d); }); } });
+onValue(ref(db,'live'),s=>{ let d=s.val(); document.getElementById('nowPlayingAdmin').innerText=d?(d.title||d.url):'-'; if(d) keeperSync(d); });
+onValue(ref(db,'queueState'),s=>{ let q=s.val(); queuePlaying=!!(q&&q.playing); if(q) currentQueueIndexA=q.index||0; });
+onValue(ref(db,'lineup'),s=>{ lineupCacheA=s.val()||{}; lineupKeysA=Object.keys(lineupCacheA); let v=lineupCacheA; let h=""; Object.entries(v).forEach(([k,it])=>{ h+=`<div class="item"><b>${it.title||it.url}</b><div class="muted">${it.url}</div><button class="btnSmallRed" onclick="del('lineup/${k}')">Delete</button></div>`; }); document.getElementById('adminQueue').innerHTML=h||'No songs in queue'; });
 onValue(ref(db,'programs'),s=>{ let v=s.val()||{}; let h=""; Object.entries(v).forEach(([k,p])=>{ h+=`<div class="item"><b>${p.name||p.title}</b> - ${p.time} EAT - ${p.duration} min<div class="muted">${p.url}</div><button class="btnSmallRed" onclick="del('programs/${k}')">Delete</button></div>`; }); document.getElementById('adminPrograms').innerHTML=h||'No programs yet'; });
-onValue(ref(db,'lineup'),s=>{ let v=s.val()||{}; let h=""; Object.entries(v).forEach(([k,it])=>{ h+=`<div class="item"><b>${it.title||it.url}</b><div class="muted">${it.url}</div><button class="btnSmallRed" onclick="del('lineup/${k}')">Delete</button></div>`; }); document.getElementById('adminQueue').innerHTML=h||'No songs in queue'; });
 onValue(ref(db,'comments'),s=>{ let v=s.val()||{}; let h=""; Object.entries(v).forEach(([k,c])=>{ h+=`<div class="item"><b>${c.name}:</b> ${c.text}<div class="muted">${c.reply?'Admin Reply: '+c.reply:''}</div><button class="btnSmall" onclick="replyComment('${k}','${c.name}')">Reply</button><button class="btnSmallRed" onclick="del('comments/${k}')">Delete</button></div>`; }); document.getElementById('adminComments').innerHTML=h||'No comments'; });
 onValue(ref(db,'notifications'),s=>{ let v=s.val()||{}; let h=""; Object.entries(v).reverse().forEach(([k,n])=>{ h+=`<div class="item">${n.text}<br><button class="btnSmallRed" onclick="del('notifications/${k}')">Delete</button></div>`; }); document.getElementById('adminNotifs').innerHTML=h||'No notifications'; });
 onValue(ref(db,'audioStreams'),s=>{ let v=s.val()||{}; let h=""; Object.entries(v).forEach(([k,a])=>{ h+=`<div class="item"><b>${a.title}</b><div class="muted">${a.url}</div><button class="btnSmallRed" onclick="del('audioStreams/${k}')">Delete</button></div>`; }); document.getElementById('adminAudio').innerHTML=h||'No audio yet'; });

@@ -174,6 +174,26 @@ onValue(ref(db,'audioStreams'),s=>{ let v=s.val()||{}; let h=""; Object.entries(
 onValue(ref(db,'artistSubmissions'),s=>{ let v=s.val()||{}; let h=""; Object.entries(v).forEach(([k,a])=>{ h+=`<div class="item"><b>${a.artist}</b><div class="muted">${a.link}</div><button class="btnSmallRed" onclick="del('artistSubmissions/${k}')">Delete</button></div>`; }); document.getElementById('adminArtist').innerHTML=h||'No submissions'; });
 onValue(ref(db,'feedback'),s=>{ let v=s.val()||{}; let h=""; Object.entries(v).forEach(([k,f])=>{ h+=`<div class="item"><b>${f.name}:</b> ${f.text}<br><button class="btnSmallRed" onclick="del('feedback/${k}')">Delete</button></div>`; }); document.getElementById('adminFeedback').innerHTML=h||'No feedback'; });
 onValue(ref(db,'users'),s=>{ let v=s.val()||{}; let h=""; Object.entries(v).forEach(([k,u])=>{ h+=`<div class="item"><b>${u.name}</b> - ${u.online?'🟢 Online':'⚪ Offline'}<div class="muted">Last: ${new Date(u.lastSeen||Date.now()).toLocaleString()}</div></div>`; }); document.getElementById('adminUsers').innerHTML=h||'No users yet'; });
-</script>
+// === ADMIN CLOCK PATCH ===
+window.startQueueOnce = () => {
+  if(window.queueStarted) return;
+  window.queueStarted = true;
+  let first = lineupKeys[0];
+  let song = lineupCache[first];
+  if(!song) return alert('No songs in lineup');
+  set(ref(db,'live'), {
+    url: song.url,
+    title: song.title,
+    mode: 'queue',
+    queueIndex: 0,
+    startedAt: Date.now()
+  });
+  set(ref(db,'queueState'), { playing: true });
+};
+window.stopQueueOnce = () => {
+  window.queueStarted = false;
+  set(ref(db,'queueState'), { playing: false });
+};
+// === END ADMIN PATCH ===</script>
 </body>
 </html>

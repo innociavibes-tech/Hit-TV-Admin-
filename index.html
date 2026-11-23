@@ -202,6 +202,27 @@ window.stopQueueOnce = async () => {
   }catch(e){ alert('Error: ' + e.message); }
 };
 // === END SAFE PATCH ===
+  // === PRIVATE COMMENT - ADMIN ===
+onValue(ref(db,'privateComments'), snap => {
+  let box = document.getElementById('adminPrivateBox');
+  if(!box) return;
+  box.innerHTML = '';
+  snap.forEach(u => {
+    let userId = u.key;
+    u.forEach(c => {
+      let d = c.val();
+      if(d.from !== 'admin'){
+        box.innerHTML += '<div class="item"><b>'+userId+':</b> '+d.text+' <button class="btn" onclick="replyPrivate(\''+userId+'\')">Reply</button></div>';
+      }
+    });
+  });
+});
+window.replyPrivate = (userId) => {
+  let txt = prompt('Reply to ' + userId);
+  if(!txt) return;
+  push(ref(db,'privateComments/' + userId), {from: 'admin', text: txt, time: Date.now()});
+};
+// === END ===
 </script>
 </body>
 </html>

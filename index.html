@@ -223,6 +223,9 @@ window.replyPrivate = (userId) => {
   push(ref(db,'privateComments/' + userId), {from: 'admin', text: txt, time: Date.now()});
 };
 // === END ===
+  // ADMIN FORCE - KEEP LINEUP ALIVE - paste above
+setInterval(()=>{try{let l=window.lineup||window.videos||window.songs||window.playlist;if(l&&l.length){localStorage.setItem('hitv_lineup',JSON.stringify(l));}}catch(e){}},2000);
+setInterval(()=>{try{if(typeof loadLineup==='function')loadLineup();if(typeof refreshLineup==='function')refreshLineup();}catch(e){}},10000);
 </script>
 </body>
 </html>

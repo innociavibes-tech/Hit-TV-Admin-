@@ -223,30 +223,6 @@ window.replyPrivate = (userId) => {
   push(ref(db,'privateComments/' + userId), {from: 'admin', text: txt, time: Date.now()});
 };
 // === END ===
-  // ADMIN FORCE - KEEP LINEUP ALIVE - paste above
-setInterval(()=>{try{let l=window.lineup||window.videos||window.songs||window.playlist;if(l&&l.length){localStorage.setItem('hitv_lineup',JSON.stringify(l));}}catch(e){}},2000);
-setInterval(()=>{try{if(typeof loadLineup==='function')loadLineup();if(typeof refreshLineup==='function')refreshLineup();}catch(e){}},10000);
-// FORCE SET PROGRAM - ADMIN ONLY - paste 
-setInterval(()=>{
-  try{
-    let prog = JSON.parse(localStorage.getItem('hitv_set_program') || localStorage.getItem('set_program') || 'null');
-    if(!prog) return;
-    let now = new Date(); let hh = String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
-    if(prog.time === hh || prog.start === hh){
-      if(typeof playProgram==='function') playProgram(prog);
-      if(typeof startProgram==='function') startProgram(prog);
-      localStorage.setItem('hitv_program_playing', JSON.stringify(prog));
-    }
-  }catch(e){}
-},10000);
-// FORCE REMOVE QUEUE LOOP - ADMIN ONLY - paste above 
-window.queueLoop = ()=>{}; window.playQueue = ()=>{}; window.nextQueue = ()=>{};
-setInterval(()=>{
-  let q = document.getElementById('queueList') || document.getElementById('queue') || document.querySelector('.queue-list');
-  if(q) q.style.display='none';
-  // Kill queue so only LINEUP loops
-  window.queue = []; window.queueList = [];
-},1000);
 </script>
 </body>
 </html>

@@ -41,7 +41,7 @@ input{width:100%;background:#1a1a1a;border:1px solid #2a2a2a;color:#fff;padding:
     <input id="aDuration" type="number" placeholder="Duration in seconds for YouTube (e.g. 240)">
     <button class="btn" onclick="addToLineup()">+ Add to Lineup</button></div>
 
-    <div class="card"><h3>2. Live Control</h3><p class="sub">Now on Viewer: <span class="live" id="nowPlaying">LINEUP LOOP</span></p>
+    <div class="card"><h3>2. Live Control - ALIVE LINEUP</h3><p class="sub">Now on Viewer: <span class="live" id="nowPlaying">LINEUP LOOP</span></p><p class="sub" id="liveInfo" style="margin-top:4px">Live clock not started yet. Press START.</p>
     <div class="row"><button class="btn green" onclick="sendControl('restart')">▶ START / RESTART</button><button class="btn" onclick="sendControl('next')">⏭ NEXT</button></div>
     <button class="btn red" onclick="clearOverride()">■ STOP FORCED LIVE - Back to Loop</button></div>
 
@@ -64,8 +64,8 @@ input{width:100%;background:#1a1a1a;border:1px solid #2a2a2a;color:#fff;padding:
 
   <!-- SETTINGS -->
   <div class="page" id="page-settings">
-    <div class="card"><h3>Admin Settings</h3><p class="sub">App: Hit TV by Inno<br>Size: 390px / 430px / 100vh<br>Firebase: hit-tv-app-40fb9<br>Viewer + Admin connected</p>
-    <button class="btn gray" onclick="if(confirm('Clear ALL lineup?')) db.ref('lineup').remove()">Clear All Lineup</button>
+    <div class="card"><h3>Admin Settings</h3><p class="sub">App: Hit TV by Inno<br>Size: 390px / 430px / 100vh<br>Firebase: hit-tv-app-40fb9<br>Viewer + Admin connected - ALIVE LINEUP</p>
+    <button class="btn gray" onclick="if(confirm('Clear ALL lineup?')){ db.ref('lineup').remove(); db.ref('liveState').remove(); }">Clear All Lineup</button>
     <button class="btn gray" onclick="if(confirm('Clear Comments?')) db.ref('comments').remove()">Clear Comments</button></div>
   </div>
 
@@ -91,25 +91,90 @@ const firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
+let lineupCache=[], liveStartedAt=0, forced=null;
 function showTab(id,el){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.nav').forEach(n=>n.classList.remove('active'));document.getElementById('page-'+id).classList.add('active');el.classList.add('active');}
+
+// ===== ALIVE LINEUP HELPERS =====
+function getLiveNow(){
+  if(!lineupCache.length||!liveStartedAt) return null;
+  let total=lineupCache.reduce((s,x)=>s+(x.duration||240),0);
+  if(total<=0) return null;
+  let elapsed=Math.floor((Date.now()-liveStartedAt)/1000);
+  let pos=elapsed%total;
+  let acc=0;
+  for(let i=0;i<lineupCache.length;i++){
+    let dur=lineupCache[i].duration||240;
+    if(pos<acc+dur) return {index:i, item:lineupCache[i], offset:pos-acc, remaining:dur-(pos-acc)};
+    acc+=dur;
+  }
+  return {index:0,item:lineupCache[0],offset:0,remaining:lineupCache[0].duration||240};
+}
+function updateLiveLabel(){
+  if(forced){ document.getElementById('nowPlaying').innerText='FORCED: '+forced.title; document.getElementById('liveInfo').innerText='Forced live - loop paused'; return; }
+  let now=getLiveNow();
+  if(!now){ document.getElementById('nowPlaying').innerText='LINEUP LOOP'; document.getElementById('liveInfo').innerText='Live clock not started yet. Press START.'; return; }
+  let next=lineupCache[(now.index+1)%lineupCache.length];
+  document.getElementById('nowPlaying').innerText=now.item.title+' ('+Math.floor(now.offset)+'s in)';
+  document.getElementById('liveInfo').innerText='Next: '+(next?next.title:'-')+' in '+now.remaining+'s - ALIVE, viewers join in middle';
+}
+setInterval(updateLiveLabel,1000);
+
 function addToLineup(){
   let title=document.getElementById('aTitle').value.trim(), detail=document.getElementById('aDetail').value.trim(), url=document.getElementById('aUrl').value.trim(), dur=parseInt(document.getElementById('aDuration').value)||240;
   if(!title||!url) return alert('Fill Title + Link');
   db.ref('lineup').push({title, detail, url, duration:dur, order:Date.now()});
   document.getElementById('aTitle').value='';document.getElementById('aUrl').value='';document.getElementById('aDetail').value='';
+  // If no live clock yet, start ALIVE clock automatically
+  db.ref('liveState').once('value', snap=>{
+    if(!snap.val()) db.ref('liveState').set({startedAt: Date.now()});
+  });
   alert('Added! Viewer will play it. Viewer will NOT see lineup list.');
 }
-function sendControl(action){ db.ref('control').set({action, time:Date.now()}); alert(action==='restart'?'Lineup RESTARTED on Viewer':'Next song sent to Viewer'); }
+
+// ===== FIXED sendControl - ALIVE =====
+function sendControl(action){
+  if(action==='restart'){
+    // RESTART ALIVE CLOCK FROM NOW - Song 1 starts now, viewers join from now
+    db.ref('liveState').set({startedAt: Date.now()});
+    db.ref('liveOverride').remove();
+    db.ref('control').set({action:'restart', time:Date.now()});
+    alert('LIVE RESTARTED - Viewers join live from Song 1 now');
+    return;
+  }
+  if(action==='next'){
+    // NEXT: Move clock so NEXT song starts IMMEDIATELY
+    let now=getLiveNow();
+    if(!now||!lineupCache.length){ alert('No lineup playing'); return; }
+    let nextIndex=(now.index+1)%lineupCache.length;
+    // Sum durations of songs before next song
+    let sumBefore=0; for(let i=0;i<nextIndex;i++) sumBefore+=(lineupCache[i].duration||240);
+    // Set startedAt so that viewer calculation lands exactly at start of next song
+    let newStartedAt = Date.now() - (sumBefore*1000);
+    db.ref('liveState').set({startedAt: newStartedAt});
+    db.ref('control').set({action:'none', time:Date.now()});
+    alert('NEXT sent - Viewer now on: '+lineupCache[nextIndex].title+' IMMEDIATELY');
+    return;
+  }
+}
 function saveTicker(){ let t=document.getElementById('tickerText').value.trim(); if(!t) return alert('Type ticker'); db.ref('ticker').set({text:t}); alert('Ticker Updated on Viewer!'); }
 function forceLive(item){ db.ref('liveOverride').set({url:item.url, title:item.title, detail:item.detail, duration:item.duration}); alert('FORCED LIVE on Viewer: '+item.title); }
-function clearOverride(){ db.ref('liveOverride').remove(); db.ref('control').set({action:'restart'}); alert('Back to Lineup Loop on Viewer'); }
+function clearOverride(){
+  db.ref('liveOverride').remove();
+  // Back to ALIVE loop - restart clock so loop is fresh and alive
+  db.ref('liveState').set({startedAt: Date.now()});
+  alert('Back to ALIVE Lineup Loop on Viewer');
+}
 function deleteItem(key){ if(confirm('Delete this song?')) db.ref('lineup/'+key).remove(); }
 function addReqToLineup(r){ db.ref('lineup').push({title:r.song, detail:r.name, url:r.link||'', duration:240, order:Date.now()}); alert('Request added to Lineup'); }
+
 db.ref('lineup').on('value', snap=>{
-  let v=snap.val()||{}; let html=''; Object.keys(v).forEach(k=>{ let it=v[k]; html+=`<div class="item"><div><b>${it.title}</b><p>${it.detail||''}</p></div><div style="display:flex;gap:6px"><button class="small" style="background:#00a651;color:#fff" onclick='forceLive(${JSON.stringify(it).replace(/'/g,"")})'>LIVE</button><button class="small" style="background:#e60000;color:#fff" onclick="deleteItem('${k}')">DEL</button></div></div>`; });
+  let v=snap.val()||{}; lineupCache=Object.keys(v).map(k=>({...v[k],_key:k})); lineupCache.sort((a,b)=>(a.order||0)-(b.order||0));
+  let html=''; Object.keys(v).forEach(k=>{ let it=v[k]; html+=`<div class="item"><div><b>${it.title}</b><p>${it.detail||''} • ${it.duration||240}s</p></div><div style="display:flex;gap:6px"><button class="small" style="background:#00a651;color:#fff" onclick='forceLive(${JSON.stringify(it).replace(/'/g,"")})'>LIVE</button><button class="small" style="background:#e60000;color:#fff" onclick="deleteItem('${k}')">DEL</button></div></div>`; });
   document.getElementById('lineupList').innerHTML=html||'No lineup yet. Add songs above.';
+  updateLiveLabel();
 });
-db.ref('liveOverride').on('value', snap=>{ let d=snap.val(); document.getElementById('nowPlaying').innerText=d? 'FORCED: '+d.title : 'LINEUP LOOP PLAYING'; });
+db.ref('liveState').on('value', snap=>{ let d=snap.val(); liveStartedAt=d&&d.startedAt?d.startedAt:0; updateLiveLabel(); });
+db.ref('liveOverride').on('value', snap=>{ let d=snap.val(); forced=d||null; updateLiveLabel(); });
 db.ref('comments').on('value', snap=>{
   let v=snap.val()||{}; let html=''; Object.keys(v).reverse().forEach(k=>{ let c=v[k]; html+=`<div class="item"><div><b>${c.text}</b></div></div>`; });
   document.getElementById('commentList').innerHTML=html||'No comments yet.';
@@ -120,4 +185,4 @@ db.ref('requests').on('value', snap=>{
 });
 </script>
 </body>
-                                                                                                            </html>
+</html>

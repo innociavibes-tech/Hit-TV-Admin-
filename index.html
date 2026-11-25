@@ -125,7 +125,27 @@ window.addLineup=()=>{ let u=document.getElementById('qUrl').value.trim(), t=doc
 function updateLoopUI(){ let b=document.getElementById('loopBadge'); let info=document.getElementById('loopInfo'); if(!b) return; if(queuePlaying){ b.innerText='🔁 LOOP ALL: ON - FOREVER'; b.style.background='#15803d'; if(info) info.innerText='Looping Forever: '+(lineupKeysA.length?('Song '+(currentQueueIndexA+1)+' of '+lineupKeysA.length+' - Next will auto play'):''); } else { b.innerText='🔁 LOOP ALL: OFF'; b.style.background='#333'; if(info) info.innerText='Lineup is OFF. Press START to loop forever.'; } }
 window.startLineup=()=>{ get(ref(db,'lineup')).then(s=>{ let v=s.val()||{}; let keys=Object.keys(v); if(!keys.length) return alert('Add songs first'); let first=v[keys[0]]; set(ref(db,'queueState'),{playing:true,index:0,startedAt:Date.now()}); set(ref(db,'live'),{url:first.url,title:first.title,detail:first.detail,mode:'queue',startedAt:Date.now(),queueIndex:0}); alert('LINEUP STARTED - Looping Forever'); }); };
 window.stopLineup=()=>{ set(ref(db,'queueState'),{playing:false}); alert('Lineup Stopped'); };
-window.addProgram=()=>{ let n=document.getElementById('progName').value.trim(), u=document.getElementById('progUrl').value.trim(), t=document.getElementById('progTitle').value.trim(), tm=document.getElementById('progTime').value, dur=document.getElementById('progDuration').value||30; if(!u||!tm) return alert('Put Link + Time'); push(ref(db,'programs'),{name:n,title:t||n,detail:n,url:u,time:tm,duration:parseInt(dur),lastPlayedDate:""}); alert('Program Saved - Will play at '+tm+' EAT every day'); };
+window.addProgram=()=>{
+  let n=document.getElementById('progName').value.trim();
+  let u=document.getElementById('progUrl').value.trim();
+  let t=document.getElementById('progTitle').value.trim();
+  let tm=document.getElementById('progTime').value;
+  let dur=document.getElementById('progDuration').value||30;
+  if(!u||!tm) return alert('Put Link + Time');
+  if(!n) n = t || 'Program';
+  push(ref(db,'programs'),{name:n,title:t||n,detail:n,url:u,time:tm,duration:parseInt(dur),lastPlayedDate:""}).then(()=>{
+    alert('Program Saved - Will play at '+tm+' EAT every day - Check list below, it should be there now');
+    // Force list to refresh now
+    get(ref(db,'programs')).then(s=>{
+      let v=s.val()||{};
+      let h="";
+      Object.entries(v).forEach(([k,p])=>{
+        h+=`<div class="item"><b>${p.name||p.title}</b> - ${p.time} EAT - ${p.duration} min<div class="muted">${p.url}</div><button class="btnSmallRed" onclick="del('programs/${k}')">Delete</button></div>`;
+      });
+      document.getElementById('adminPrograms').innerHTML=h||'No programs yet';
+    });
+  }).catch(e=>alert('Save FAILED: '+e.message));
+};
 window.sendNotif=()=>{ let t=document.getElementById('notifText').value.trim(); if(!t) return; push(ref(db,'notifications'),{text:t,time:Date.now()}); document.getElementById('notifText').value=''; };
 window.addAudio=()=>{ let t=document.getElementById('audioTitle').value.trim(), u=document.getElementById('audioUrl').value.trim(); if(!t||!u) return alert('Fill all'); push(ref(db,'audioStreams'),{title:t,url:u}); };
 window.del=(path)=>{ if(confirm('Delete?')) remove(ref(db,path)); };

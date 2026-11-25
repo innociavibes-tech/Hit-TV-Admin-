@@ -50,6 +50,14 @@ input{width:100%;background:#1a1a1a;border:1px solid #2a2a2a;color:#fff;padding:
     <button class="btn" onclick="saveTicker()">Update Ticker on Viewer</button></div>
 
     <div class="card"><h3>4. Current Lineup - Only Admin Sees This</h3><div id="lineupList">Loading...</div></div>
+
+    <!-- 5. AUDIO STREAMS - NEW -->
+    <div class="card"><h3>5. Audio Streams - Upload for Viewers to Download</h3><p class="sub">Admin uploads audio here. Viewer sees it in Audio Streams tab + Download button.</p>
+    <input id="auTitle" placeholder="Audio Title - e.g. New Song Audio">
+    <input id="auDetail" placeholder="Artist / Detail - e.g. Lasmid">
+    <input id="auUrl" placeholder="Paste MP3 / Audio Link">
+    <button class="btn" onclick="addAudio()">+ Upload Audio Stream</button>
+    <div id="audioAdminList" style="margin-top:8px">No audios yet.</div></div>
   </div>
 
   <!-- COMMENTS -->
@@ -57,16 +65,17 @@ input{width:100%;background:#1a1a1a;border:1px solid #2a2a2a;color:#fff;padding:
     <div class="card"><h3>Live Comments - From Viewers</h3><div id="commentList">No comments yet.</div></div>
   </div>
 
-  <!-- REQUESTS -->
+  <!-- REQUESTS - WITH PHONE -->
   <div class="page" id="page-requests">
-    <div class="card"><h3>Artist Requests</h3><div id="reqList">No requests yet.</div></div>
+    <div class="card"><h3>Artist Requests - With Phone / WhatsApp</h3><p class="sub">Artist name, song, phone number, link. Tap + ADD to add to lineup.</p><div id="reqList">No requests yet.</div></div>
   </div>
 
   <!-- SETTINGS -->
   <div class="page" id="page-settings">
     <div class="card"><h3>Admin Settings</h3><p class="sub">App: Hit TV by Inno<br>Size: 390px / 430px / 100vh<br>Firebase: hit-tv-app-40fb9<br>Viewer + Admin connected - ALIVE LINEUP</p>
     <button class="btn gray" onclick="if(confirm('Clear ALL lineup?')){ db.ref('lineup').remove(); db.ref('liveState').remove(); }">Clear All Lineup</button>
-    <button class="btn gray" onclick="if(confirm('Clear Comments?')) db.ref('comments').remove()">Clear Comments</button></div>
+    <button class="btn gray" onclick="if(confirm('Clear Comments?')) db.ref('comments').remove()">Clear Comments</button>
+    <button class="btn gray" onclick="if(confirm('Clear Audio Streams?')) db.ref('audioStreams').remove()">Clear Audio Streams</button></div>
   </div>
 
   <div class="bottom">
@@ -124,7 +133,6 @@ function addToLineup(){
   if(!title||!url) return alert('Fill Title + Link');
   db.ref('lineup').push({title, detail, url, duration:dur, order:Date.now()});
   document.getElementById('aTitle').value='';document.getElementById('aUrl').value='';document.getElementById('aDetail').value='';
-  // If no live clock yet, start ALIVE clock automatically
   db.ref('liveState').once('value', snap=>{
     if(!snap.val()) db.ref('liveState').set({startedAt: Date.now()});
   });
@@ -134,7 +142,6 @@ function addToLineup(){
 // ===== FIXED sendControl - ALIVE =====
 function sendControl(action){
   if(action==='restart'){
-    // RESTART ALIVE CLOCK FROM NOW - Song 1 starts now, viewers join from now
     db.ref('liveState').set({startedAt: Date.now()});
     db.ref('liveOverride').remove();
     db.ref('control').set({action:'restart', time:Date.now()});
@@ -142,13 +149,10 @@ function sendControl(action){
     return;
   }
   if(action==='next'){
-    // NEXT: Move clock so NEXT song starts IMMEDIATELY
     let now=getLiveNow();
     if(!now||!lineupCache.length){ alert('No lineup playing'); return; }
     let nextIndex=(now.index+1)%lineupCache.length;
-    // Sum durations of songs before next song
     let sumBefore=0; for(let i=0;i<nextIndex;i++) sumBefore+=(lineupCache[i].duration||240);
-    // Set startedAt so that viewer calculation lands exactly at start of next song
     let newStartedAt = Date.now() - (sumBefore*1000);
     db.ref('liveState').set({startedAt: newStartedAt});
     db.ref('control').set({action:'none', time:Date.now()});
@@ -160,12 +164,21 @@ function saveTicker(){ let t=document.getElementById('tickerText').value.trim();
 function forceLive(item){ db.ref('liveOverride').set({url:item.url, title:item.title, detail:item.detail, duration:item.duration}); alert('FORCED LIVE on Viewer: '+item.title); }
 function clearOverride(){
   db.ref('liveOverride').remove();
-  // Back to ALIVE loop - restart clock so loop is fresh and alive
   db.ref('liveState').set({startedAt: Date.now()});
   alert('Back to ALIVE Lineup Loop on Viewer');
 }
 function deleteItem(key){ if(confirm('Delete this song?')) db.ref('lineup/'+key).remove(); }
-function addReqToLineup(r){ db.ref('lineup').push({title:r.song, detail:r.name, url:r.link||'', duration:240, order:Date.now()}); alert('Request added to Lineup'); }
+function addReqToLineup(r){ db.ref('lineup').push({title:r.song, detail:r.name+' • '+ (r.phone||''), url:r.link||'', duration:240, order:Date.now()}); alert('Request added to Lineup'); }
+
+// ===== 5. AUDIO STREAMS - NEW =====
+function addAudio(){
+  let t=document.getElementById('auTitle').value.trim(), d=document.getElementById('auDetail').value.trim(), u=document.getElementById('auUrl').value.trim();
+  if(!t||!u) return alert('Fill Audio Title + Audio Link');
+  db.ref('audioStreams').push({title:t, detail:d, url:u, time:Date.now()});
+  document.getElementById('auTitle').value=''; document.getElementById('auDetail').value=''; document.getElementById('auUrl').value='';
+  alert('Audio Uploaded! Viewers can now see + Download it in Audio Streams.');
+}
+function deleteAudio(key){ if(confirm('Delete this audio?')) db.ref('audioStreams/'+key).remove(); }
 
 db.ref('lineup').on('value', snap=>{
   let v=snap.val()||{}; lineupCache=Object.keys(v).map(k=>({...v[k],_key:k})); lineupCache.sort((a,b)=>(a.order||0)-(b.order||0));
@@ -179,9 +192,19 @@ db.ref('comments').on('value', snap=>{
   let v=snap.val()||{}; let html=''; Object.keys(v).reverse().forEach(k=>{ let c=v[k]; html+=`<div class="item"><div><b>${c.text}</b></div></div>`; });
   document.getElementById('commentList').innerHTML=html||'No comments yet.';
 });
+// ===== REQUESTS - WITH PHONE / WHATSAPP =====
 db.ref('requests').on('value', snap=>{
-  let v=snap.val()||{}; let html=''; Object.keys(v).reverse().forEach(k=>{ let r=v[k]; html+=`<div class="item"><div><b>${r.name} - ${r.song}</b><p>${r.link||''}</p></div><button class="small" style="background:#0033cc;color:#fff" onclick='addReqToLineup(${JSON.stringify(r).replace(/'/g,"")})'>+ ADD</button></div>`; });
+  let v=snap.val()||{}; let html='';
+  Object.keys(v).reverse().forEach(k=>{ let r=v[k];
+    html+=`<div class="item"><div><b>${r.name} - ${r.song}</b><p>📞 ${r.phone||'No phone'}<br>${r.link||''}</p></div><div style="display:flex;gap:6px;flex-direction:column"><button class="small" style="background:#0033cc;color:#fff" onclick='addReqToLineup(${JSON.stringify(r).replace(/'/g,"")})'>+ ADD</button>${r.phone?`<a href="https://wa.me/${String(r.phone).replace(/[^0-9]/g,'')}" target="_blank" style="text-decoration:none"><button class="small" style="background:#00a651;color:#fff;width:100%">WhatsApp</button></a>`:''}</div></div>`;
+  });
   document.getElementById('reqList').innerHTML=html||'No requests yet.';
+});
+// ===== AUDIO STREAMS LIST IN ADMIN =====
+db.ref('audioStreams').on('value', snap=>{
+  let v=snap.val()||{}; let html='';
+  Object.keys(v).forEach(k=>{ let a=v[k]; html+=`<div class="item"><div><b>${a.title}</b><p>${a.detail||''}</p></div><button class="small" style="background:#e60000;color:#fff" onclick="deleteAudio('${k}')">DEL</button></div>`; });
+  document.getElementById('audioAdminList').innerHTML=html||'No audios yet.';
 });
 </script>
 </body>

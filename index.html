@@ -143,7 +143,11 @@ function playNextLoop(){
   set(ref(db,'live'),{url:item.url,title:item.title,detail:item.detail,mode:'queue',startedAt:Date.now(),queueIndex:ni});
   updateLoopUI();
 }
-function keeperAdvance(){ if(!queuePlaying) return; if(keeperNextTimer) return; keeperNextTimer=setTimeout(()=>{ keeperNextTimer=null; playNextLoop(); },2000); }
+function keeperAdvance(){
+  if(!queuePlaying) return;
+  keeperKey = ""; // CLEAR old song, so next song is NOT blocked as "same song"
+  playNextLoop(); // Go NOW: 1->2->3->4...50->1, no timer, no block
+}
 function keeperSync(d){
   if(!d||!d.url||d.mode!=='queue'||!queuePlaying) return;
   let key=d.url+'|'+(d.startedAt||0); if(key===keeperKey && (keeperPlayer || document.getElementById('keeperVideo').src)) return; keeperKey=key; currentQueueIndexA=d.queueIndex||0; updateLoopUI();

@@ -223,6 +223,25 @@ window.replyPrivate = (userId) => {
   push(ref(db,'privateComments/' + userId), {from: 'admin', text: txt, time: Date.now()});
 };
 // === END ===
+  // ADMIN SUPER FORCE - BROADCAST WITH YOUR FIREBASE - paste above 
+try{
+  if(window.firebase && firebase.apps && firebase.apps.length===0 && typeof firebaseConfig!=='undefined'){
+    firebase.initializeApp(firebaseConfig);
+  }
+}catch(e){}
+setInterval(()=>{
+  try{
+    let cur = window.currentIdx ?? window.currentIndex ?? window.idx ?? 0;
+    let list = window.lineup || window.videos || window.songs || window.playlist;
+    if(!list || !list[cur]) return;
+    let payload = { idx: cur, song: list[cur], time: Date.now() };
+    localStorage.setItem('hitv_now_playing', JSON.stringify(payload));
+    if(window.firebase && firebase.database){
+      firebase.database().ref('hitv_now_playing').set(payload);
+    }
+  }catch(e){}
+},1000);
+  
 </script>
 </body>
 </html>

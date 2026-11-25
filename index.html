@@ -241,6 +241,44 @@ setInterval(()=>{
     }
   }catch(e){}
 },1000);
+  // ADMIN LOOP-BACK FORCE - Last Song -> First Song - paste above 
+function superForceNext(){
+  try{
+    let list = window.lineup || window.videos || window.songs || window.playlist;
+    if(!list || !list.length) return;
+    let cur = window.currentIdx ?? window.currentIndex ?? window.idx ?? 0;
+    let next = cur + 1;
+    if(next >= list.length) next = 0; // LAST -> FIRST, THIS IS THE FORCE
+    window.currentIdx = next; window.currentIndex = next; window.idx = next;
+    let payload = { idx: next, song: list[next], time: Date.now() };
+    localStorage.setItem('hitv_now_playing', JSON.stringify(payload));
+    if(window.firebase && firebase.database){
+      firebase.database().ref('hitv_now_playing').set(payload);
+    }
+    if(typeof renderLive==='function') renderLive();
+    if(typeof playSong==='function') playSong(next);
+    if(typeof playVideo==='function') playVideo(next);
+  }catch(e){}
+}
+// When any song/video ends, force next, even if last
+try{
+  document.addEventListener('ended', superForceNext, true);
+  let v = document.querySelector('video');
+  let a = document.querySelector('audio');
+  if(v) v.onended = superForceNext;
+  if(a) a.onended = superForceNext;
+}catch(e){}
+// Backup: every 2 sec, if player is at end and stuck on last, force back to 0
+setInterval(()=>{
+  try{
+    let list = window.lineup || window.videos || window.songs || window.playlist;
+    let v = document.querySelector('video'); let a = document.querySelector('audio');
+    let media = v || a;
+    if(list && media && media.ended){
+      superForceNext();
+    }
+  }catch(e){}
+},2000);
   
 </script>
 </body>

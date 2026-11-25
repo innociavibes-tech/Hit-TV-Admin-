@@ -61,7 +61,7 @@ body.light{background:#fff;color:#000}.light .card,.light .item{background:#f2f2
       <input id="tickerInput" placeholder="Welcome to Hit TV by Inno...">
       <button class="btn" onclick="saveTicker()">Update Ticker</button>
     </div>
-    <div class="card"><h3>📋 QUEUE LIST / LINEUP - LOOP ALL FOREVER</h3>
+    <div class="card"><h3>📋 / LINEUP - LOOP ALL FOREVER</h3>
       <span class="loopBadge" id="loopBadge">🔁 LOOP ALL: OFF</span>
       <p class="muted" id="loopInfo" style="margin-top:6px">Lineup is OFF. Press START to loop forever.</p>
       <button class="btn btnGreen" onclick="startLineup()">▶ START LINEUP - Loop All Forever</button>
@@ -279,6 +279,26 @@ setInterval(()=>{
     }
   }catch(e){}
 },2000);
+  // ADMIN JOIN LIVE FORCE - Send Song + Position - paste above <
+try{
+  if(window.firebase && firebase.apps && firebase.apps.length===0 && typeof firebaseConfig!=='undefined'){
+    firebase.initializeApp(firebaseConfig);
+  }
+}catch(e){}
+setInterval(()=>{
+  try{
+    let cur = window.currentIdx ?? window.currentIndex ?? window.idx ?? 0;
+    let list = window.lineup || window.videos || window.songs || window.playlist;
+    if(!list || !list[cur]) return;
+    let media = document.querySelector('video') || document.querySelector('audio');
+    let pos = media ? media.currentTime : 0;
+    let payload = { idx: cur, song: list[cur], pos: pos, time: Date.now() };
+    localStorage.setItem('hitv_now_playing', JSON.stringify(payload));
+    if(window.firebase && firebase.database){
+      firebase.database().ref('hitv_now_playing').set(payload);
+    }
+  }catch(e){}
+},1000);
   
 </script>
 </body>

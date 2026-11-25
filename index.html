@@ -7,11 +7,11 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',Arial,sans-serif}
 body{background:#0a0a0a;color:#fff;min-height:100vh}
-.app{width:100%;max-width:980px;margin:0 auto;display:flex;flex-direction:column;min-height:100vh;padding:0 12px 90px}
+.app{width:100%;max-width:980px;margin:0 auto;display:flex;flex-direction:column;min-height:100vh;padding:0 12px 20px}
 .top{display:flex;justify-content:space-between;align-items:center;padding:14px 4px;flex-wrap:wrap;gap:10px}
 .top b{font-size:22px}.top b span{color:#1a2fd6}
 .setBtn{background:#e60000;color:#fff;border:none;padding:8px 16px;border-radius:20px;font-size:12px;font-weight:800}
-.livePreview{background:linear-gradient(135deg,#0033cc,#000a2e);border:1px solid #2a5bff;border-radius:16px;padding:16px;margin:4px 0 10px;position:sticky;top:0;z-index:50}
+.livePreview{background:linear-gradient(135deg,#0033cc,#000a2e);border:1px solid #2a5bff;border-radius:16px;padding:16px;margin:4px 0 10px}
 .livePreview small{color:#a8c0ff;font-size:12px;letter-spacing:1px}
 .livePreview h2{font-size:20px;margin:6px 0 4px}
 .livePreview p{color:#d0dcff;font-size:13px}
@@ -28,10 +28,12 @@ input[type=file]{padding:10px}
 .small{padding:8px 12px;border-radius:8px;border:none;cursor:pointer;font-weight:800;font-size:12px;white-space:nowrap}
 .live{color:#00ff88;font-weight:800}
 .page{display:none;flex:1}.page.active{display:block}
-.bottom{position:fixed;bottom:0;left:0;right:0;background:#111;border-top:1px solid #222;display:flex;padding:8px 4px;z-index:100;max-width:980px;margin:0 auto;overflow-x:auto}
-.nav{flex:1;min-width:70px;text-align:center;padding:8px 2px;font-size:11px;color:#888;cursor:pointer;border-radius:10px;white-space:nowrap}
+/* FIXED BOTTOM - STICKY, NOT FIXED, SO IT CANNOT BLOCK CLICKS */
+.bottom{position:sticky;bottom:0;background:#111;border-top:1px solid #222;display:flex;padding:8px 4px;z-index:100;overflow-x:auto;margin-top:10px;border-radius:14px 14px 0 0}
+.nav{flex:1;min-width:70px;text-align:center;padding:10px 2px;font-size:11px;color:#888;cursor:pointer;border-radius:10px;white-space:nowrap;background:transparent;border:none}
 .nav.active{background:#0033cc;color:#fff}
-.nav b{display:block;font-size:18px}
+.nav b{display:block;font-size:18px;pointer-events:none}
+.nav span{pointer-events:none}
 .progLive{border-color:#00ff88!important}
 </style>
 </head>
@@ -39,7 +41,6 @@ input[type=file]{padding:10px}
 <div class="app">
   <div class="top"><b>Hit TV <span>by Inno</span> - ADMIN</b><span class="setBtn">● ADMIN</span></div>
 
-  <!-- LIVE PREVIEW ON TOP - WHAT VIEWERS SEE NOW -->
   <div class="livePreview" id="livePreviewBox">
     <small>👀 WHAT VIEWERS ARE WATCHING NOW - LIVE</small>
     <h2 id="adminLiveTitle">LINEUP LOOP</h2>
@@ -48,7 +49,6 @@ input[type=file]{padding:10px}
     <span class="liveBadge" id="adminLiveBadge">● LIVE</span>
   </div>
 
-  <!-- HOME / LINEUP -->
   <div class="page active" id="page-home">
     <div class="card"><h3>1. Add to Lineup</h3><p class="sub">Viewer will play it, but will NOT see lineup list. Only NOW PLAYING / NEXT.</p>
     <input id="aTitle" placeholder="Song Title">
@@ -56,19 +56,15 @@ input[type=file]{padding:10px}
     <input id="aUrl" placeholder="Paste YouTube Link OR MP4 Link">
     <input id="aDuration" type="number" placeholder="Duration in seconds for YouTube (e.g. 240)">
     <button class="btn" onclick="addToLineup()">+ Add to Lineup</button></div>
-
     <div class="card"><h3>2. Live Control - ALIVE LINEUP</h3><p class="sub">Now on Viewer: <span class="live" id="nowPlaying">LINEUP LOOP</span></p><p class="sub" id="liveInfo" style="margin-top:4px">Live clock not started yet. Press START.</p>
     <button class="btn green" onclick="sendControl('restart')">▶ START / RESTART</button>
     <button class="btn red" onclick="clearOverride()">■ STOP FORCED LIVE - Back to Loop</button></div>
-
     <div class="card"><h3>3. Blue Ticker</h3>
     <input id="tickerText" placeholder="Type ticker... e.g. Welcome to Hit TV by Inno">
     <button class="btn" onclick="saveTicker()">Update Ticker on Viewer</button></div>
-
     <div class="card"><h3>4. Current Lineup - Only Admin Sees This</h3><div id="lineupList">Loading...</div></div>
   </div>
 
-  <!-- PROGRAMS -->
   <div class="page" id="page-programs">
     <div class="card"><h3>📺 Set Program - Plays At That Time Every Day</h3><p class="sub">Set time e.g. 19:00. Program plays at that time, when it finishes we go back to Lineup automatically. Tomorrow same time it plays again, until you DELETE it.</p>
     <input id="pTitle" placeholder="Program Title - e.g. Evening News / Gospel Hour">
@@ -81,7 +77,6 @@ input[type=file]{padding:10px}
     <div class="card"><h3>Scheduled Programs</h3><div id="progList">No programs yet.</div></div>
   </div>
 
-  <!-- AUDIO -->
   <div class="page" id="page-audio">
     <div class="card"><h3>🎵 Audio Streams - Upload MP3 File</h3><p class="sub">Pick MP3 file from your phone / computer. Viewer sees it in Audio Streams + Download.</p>
     <input id="auTitle" placeholder="Audio Title">
@@ -94,7 +89,6 @@ input[type=file]{padding:10px}
     <div class="card"><h3>Uploaded Audios</h3><div id="audioAdminList">No audios yet.</div></div>
   </div>
 
-  <!-- NOTIFICATIONS -->
   <div class="page" id="page-notifications">
     <div class="card"><h3>🔔 Send Notification to Viewers</h3><p class="sub">Viewers see this in Notifications tab.</p>
     <input id="notifTitle" placeholder="Title - e.g. New Show Tonight!">
@@ -103,22 +97,18 @@ input[type=file]{padding:10px}
     <div class="card"><h3>Sent Notifications</h3><div id="notifAdminList">No notifications yet.</div></div>
   </div>
 
-  <!-- USERS -->
   <div class="page" id="page-users">
     <div class="card"><h3>👥 All Users - Last Seen</h3><p class="sub">Who opened Hit TV app + when they were last online.</p><p id="userCount" style="margin-top:6px;font-weight:800">Total Users: 0</p><div id="userList">No users yet.</div></div>
   </div>
 
-  <!-- COMMENTS -->
   <div class="page" id="page-comments">
     <div class="card"><h3>Live Comments - From Viewers</h3><div id="commentList">No comments yet.</div></div>
   </div>
 
-  <!-- REQUESTS -->
   <div class="page" id="page-requests">
     <div class="card"><h3>Artist Requests - With Phone / WhatsApp</h3><div id="reqList">No requests yet.</div></div>
   </div>
 
-  <!-- SETTINGS -->
   <div class="page" id="page-settings">
     <div class="card"><h3>Admin Settings</h3><p class="sub">App: Hit TV by Inno<br>Firebase: hit-tv-app-40fb9<br>Viewer + Admin connected - ALIVE LINEUP + PROGRAMS</p>
     <button class="btn gray" onclick="if(confirm('Clear ALL lineup?')){ db.ref('lineup').remove(); db.ref('liveState').remove(); }">Clear All Lineup</button>
@@ -128,15 +118,16 @@ input[type=file]{padding:10px}
     <button class="btn gray" onclick="if(confirm('Clear Programs?')) db.ref('programs').remove()">Clear All Programs</button></div>
   </div>
 
-  <div class="bottom">
-    <div class="nav active" onclick="showTab('home',this)"><b>⌂</b>Lineup</div>
-    <div class="nav" onclick="showTab('programs',this)"><b>📺</b>Programs</div>
-    <div class="nav" onclick="showTab('audio',this)"><b>♫</b>Audio</div>
-    <div class="nav" onclick="showTab('notifications',this)"><b>🔔</b>Notify</div>
-    <div class="nav" onclick="showTab('users',this)"><b>👥</b>Users</div>
-    <div class="nav" onclick="showTab('comments',this)"><b>💬</b>Comments</div>
-    <div class="nav" onclick="showTab('requests',this)"><b>★</b>Requests</div>
-    <div class="nav" onclick="showTab('settings',this)"><b>⚙</b>Settings</div>
+  <!-- FIXED TABS - Use data-tab, no this problem -->
+  <div class="bottom" id="adminBottom">
+    <button class="nav active" data-tab="home"><b>⌂</b><span>Lineup</span></button>
+    <button class="nav" data-tab="programs"><b>📺</b><span>Programs</span></button>
+    <button class="nav" data-tab="audio"><b>♫</b><span>Audio</span></button>
+    <button class="nav" data-tab="notifications"><b>🔔</b><span>Notify</span></button>
+    <button class="nav" data-tab="users"><b>👥</b><span>Users</span></button>
+    <button class="nav" data-tab="comments"><b>💬</b><span>Comments</span></button>
+    <button class="nav" data-tab="requests"><b>★</b><span>Requests</span></button>
+    <button class="nav" data-tab="settings"><b>⚙</b><span>Settings</span></button>
   </div>
 </div>
 
@@ -152,10 +143,25 @@ const firebaseConfig = {
   messagingSenderId: "740828744097",
   appId: "1:740828744097:web:49104b3522d02de64ce3e0"
 };
-firebase.initializeApp(firebaseConfig);
+try{ firebase.initializeApp(firebaseConfig); }catch(e){ console.log('already init'); }
 const db = firebase.database();
 let lineupCache=[], liveStartedAt=0, forced=null, programsCache={};
-function showTab(id,el){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.nav').forEach(n=>n.classList.remove('active'));document.getElementById('page-'+id).classList.add('active');el.classList.add('active');}
+
+// ===== FIXED TABS - Works even if you tap icon or text =====
+function showTab(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav').forEach(n=>n.classList.remove('active'));
+  let page=document.getElementById('page-'+id);
+  if(page) page.classList.add('active');
+  let btn=document.querySelector('.nav[data-tab="'+id+'"]');
+  if(btn) btn.classList.add('active');
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+// Attach with addEventListener - More reliable than onclick
+document.querySelectorAll('.nav').forEach(btn=>{
+  btn.addEventListener('click', function(){ showTab(this.getAttribute('data-tab')); });
+});
+
 function getLiveNow(){
   if(!lineupCache.length||!liveStartedAt) return null;
   let total=lineupCache.reduce((s,x)=>s+(x.duration||240),0);
@@ -165,7 +171,6 @@ function getLiveNow(){
   for(let i=0;i<lineupCache.length;i++){ let dur=lineupCache[i].duration||240; if(pos<acc+dur) return {index:i, item:lineupCache[i], offset:pos-acc, remaining:dur-(pos-acc)}; acc+=dur; }
   return {index:0,item:lineupCache[0],offset:0,remaining:lineupCache[0].duration||240};
 }
-// ===== PROGRAM CHECK - Is a program playing NOW? =====
 function getActiveProgram(){
   let now=new Date(); let mins=now.getHours()*60+now.getMinutes();
   let found=null;
@@ -174,7 +179,6 @@ function getActiveProgram(){
     let parts=p.startTime.split(':'); let startMins=parseInt(parts[0])*60+parseInt(parts[1]);
     let durMins=Math.ceil((p.duration||1800)/60);
     let endMins=startMins+durMins;
-    // Handle program crossing midnight
     let isActive=false; let offset=0;
     if(endMins<=1440){ isActive = mins>=startMins && mins<endMins; offset=(mins-startMins)*60 + now.getSeconds(); }
     else { if(mins>=startMins){ isActive=true; offset=(mins-startMins)*60+now.getSeconds(); } else if(mins<endMins-1440){ isActive=true; offset=(1440-startMins+mins)*60+now.getSeconds(); } }
@@ -243,8 +247,6 @@ function forceLive(item){ db.ref('liveOverride').set({url:item.url, title:item.t
 function clearOverride(){ db.ref('liveOverride').remove(); db.ref('liveState').set({startedAt: Date.now()}); alert('Back to Lineup Loop'); }
 function deleteItem(key){ if(confirm('Delete this song?')) db.ref('lineup/'+key).remove(); }
 function addReqToLineup(r){ db.ref('lineup').push({title:r.song, detail:r.name+' • '+(r.phone||''), url:r.link||'', duration:240, order:Date.now()}); alert('Request added to Lineup'); }
-
-// ===== PROGRAMS =====
 function addProgram(){
   let t=document.getElementById('pTitle').value.trim(), d=document.getElementById('pDetail').value.trim(), u=document.getElementById('pUrl').value.trim(), dur=parseInt(document.getElementById('pDuration').value)||1800, tm=document.getElementById('pTime').value;
   if(!t||!u||!tm) return alert('Fill Title + Link + Time');
@@ -253,15 +255,13 @@ function addProgram(){
   alert('Program SET! It will play every day at '+tm+', then back to lineup.');
 }
 function deleteProgram(key){ if(confirm('Delete this program? It will NOT play again.')) db.ref('programs/'+key).remove(); }
-
-// ===== AUDIO - FILE UPLOAD MP3 =====
 function addAudio(){
   let t=document.getElementById('auTitle').value.trim(), d=document.getElementById('auDetail').value.trim(), u=document.getElementById('auUrl').value.trim();
   let file=document.getElementById('auFile').files[0];
   if(!t) return alert('Fill Audio Title');
   if(file){
     document.getElementById('auStatus').innerText='Uploading file... please wait';
-    if(file.size>8000000){ alert('File too big for Firebase. Use file under 8MB or paste link.'); document.getElementById('auStatus').innerText=''; return; }
+    if(file.size>8000000){ alert('File too big. Use under 8MB or paste link.'); document.getElementById('auStatus').innerText=''; return; }
     let reader=new FileReader();
     reader.onload=function(e){
       db.ref('audioStreams').push({title:t, detail:d, url:e.target.result, fileName:file.name, time:Date.now()});
@@ -278,8 +278,6 @@ function addAudio(){
   alert('Audio Uploaded! Viewers can download it.');
 }
 function deleteAudio(key){ if(confirm('Delete this audio?')) db.ref('audioStreams/'+key).remove(); }
-
-// ===== NOTIFICATIONS =====
 function sendNotif(){
   let t=document.getElementById('notifTitle').value.trim(), m=document.getElementById('notifText').value.trim();
   if(!t||!m) return alert('Fill Title + Message');
@@ -288,7 +286,6 @@ function sendNotif(){
   alert('Notification sent to all viewers!');
 }
 function deleteNotif(key){ if(confirm('Delete this notification?')) db.ref('notifications/'+key).remove(); }
-
 db.ref('lineup').on('value', snap=>{
   let v=snap.val()||{}; lineupCache=Object.keys(v).map(k=>({...v[k],_key:k})); lineupCache.sort((a,b)=>(a.order||0)-(b.order||0));
   let html=''; Object.keys(v).forEach(k=>{ let it=v[k]; html+=`<div class="item"><div><b>${it.title}</b><p>${it.detail||''} • ${it.duration||240}s</p></div><div style="display:flex;gap:6px"><button class="small" style="background:#00a651;color:#fff" onclick='forceLive(${JSON.stringify(it).replace(/'/g,"")})'>LIVE</button><button class="small" style="background:#e60000;color:#fff" onclick="deleteItem('${k}')">DEL</button></div></div>`; });
@@ -299,4 +296,4 @@ db.ref('liveState').on('value', snap=>{ let d=snap.val(); liveStartedAt=d&&d.sta
 db.ref('liveOverride').on('value', snap=>{ let d=snap.val(); forced=d||null; updateLiveLabel(); });
 db.ref('programs').on('value', snap=>{
   programsCache=snap.val()||{};
-  let html=''; Object.keys(programsCache).forEach(k=>{ let p=programsCache[k]; html+=`<div class="item"><div><b>📺 ${p.title} - ${p.startTime} Every Day</b><p>${p.detail||''} • ${p.duration}s • ${p.url.substring(0,40)}</p></div><button class="small" style="background:#e60000;color:#fff" onclick="
+  let html=''; Object.keys(programsCach

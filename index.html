@@ -167,8 +167,7 @@ function keeperSync(d){
       kv.onerror=()=>keeperAdvance();
     }
   }
-}
-setInterval(()=>{ if(!navigator.onLine) return; get(ref(db,'live')).then(s=>{ let d=s.val(); if(d) keeperSync(d); else if(queuePlaying && lineupKeysA.length){ playNextLoop(); } }).catch(()=>{}); },5000);
+      }
 document.addEventListener('visibilitychange',()=>{ if(!document.hidden){ get(ref(db,'live')).then(s=>{ let d=s.val(); if(d) keeperSync(d); }); } });
 onValue(ref(db,'live'),s=>{ let d=s.val(); document.getElementById('nowPlayingAdmin').innerText=d?(d.title||d.url):'-'; if(d) keeperSync(d); });
 onValue(ref(db,'queueState'),s=>{ let q=s.val(); queuePlaying=!!(q&&q.playing); if(q) currentQueueIndexA=q.index||0; updateLoopUI(); if(queuePlaying && lineupKeysA.length){ get(ref(db,'live')).then(ls=>{ let d=ls.val(); if(!d||!d.url) playNextLoop(); }); } });

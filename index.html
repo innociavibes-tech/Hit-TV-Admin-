@@ -255,6 +255,55 @@ db.ref('audioStreams').on('value', snap=>{
     if(p){ p.style.margin='12px'; p.style.width='calc(100% - 24px)'; }
   }
 })();
+  // ===== ADMIN SET PROGRAM V2 - FULL WIDTH + DURATION 9999 =====
+(function(){
+  // Remove old box if it exists (so no duplicate)
+  let old = document.getElementById('adminProgBox');
+  if(old) old.remove();
+  let box = document.createElement('div');
+  box.id = 'adminProgBox';
+  box.style.cssText = "background:#161616;border:1px solid #333;border-radius:12px;padding:14px;margin:12px;width:calc(100% - 24px);box-sizing:border-box";
+  box.innerHTML = '<h3 style="margin-bottom:10px">Set Program - Forces Viewer Like Real TV</h3>'
+    + '<label style="font-size:12px;color:#aaa">Program Title</label>'
+    + '<input id="progTitle" placeholder="e.g. Evening News" style="margin-bottom:8px">'
+    + '<label style="font-size:12px;color:#aaa">YouTube / MP4 Link</label>'
+    + '<input id="progUrl" placeholder="https://youtu.be/..." style="margin-bottom:8px">'
+    + '<label style="font-size:12px;color:#aaa">Start Time - Uganda Time</label>'
+    + '<input id="progTime" type="time" style="margin-bottom:8px">'
+    + '<label style="font-size:12px;color:#aaa">Duration - Put 9999 to play FULL video to end</label>'
+    + '<input id="progDur" type="number" value="9999" style="margin-bottom:8px">'
+    + '<button id="progSave" style="width:100%;background:#0033cc;color:#fff;border:none;padding:13px;border-radius:10px;font-weight:800;cursor:pointer">Save Program</button>'
+    + '<p id="progMsg" style="font-size:12px;color:#00ff88;margin-top:8px"></p>'
+    + '<div id="progList" style="margin-top:10px"></div>';
+  // Put it inside .app, not on side, so it is full width
+  let app = document.querySelector('.app') || document.body;
+  app.appendChild(box);
+  // Fix Admin width - remove 390 squeeze
+  if(app){ app.style.width='100%'; app.style.maxWidth='none'; app.style.margin='0'; app.style.height='auto'; app.style.minHeight='100vh'; }
+  document.body.style.display='block';
+
+  document.getElementById('progSave').onclick = function(){
+    let t = document.getElementById('progTitle').value.trim();
+    let u = document.getElementById('progUrl').value.trim();
+    let tm = document.getElementById('progTime').value.trim();
+    let d = parseInt(document.getElementById('progDur').value.trim()) || 9999;
+    if(!t || !u || !tm) return alert('Fill Title + Link + Time');
+    db.ref('programs').push({title:t, url:u, startTime:tm, duration:d});
+    document.getElementById('progMsg').innerText = 'Saved! Will play at '+tm+' full video, then back to lineup';
+    document.getElementById('progTitle').value='';
+    document.getElementById('progUrl').value='';
+  };
+
+  db.ref('programs').on('value', s=>{
+    let v = s.val()||{};
+    let h = '<b>Saved Programs:</b>';
+    Object.keys(v).forEach(k=>{
+      let p = v[k];
+      h += '<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:10px;padding:10px;margin-top:8px"><div><b style="font-size:13px">'+p.title+'</b><p style="font-size:11px;color:#888">'+p.startTime+' - Duration: '+p.duration+' - '+p.url.substring(0,30)+'</p></div><button onclick="db.ref(\'programs/'+k+'\').remove()" style="background:#cc0000;color:#fff;border:none;padding:8px 10px;border-radius:8px;cursor:pointer">Delete</button></div>';
+    });
+    document.getElementById('progList').innerHTML = h;
+  });
+})();
   
 </script>
 </body>

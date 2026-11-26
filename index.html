@@ -243,6 +243,18 @@ db.ref('audioStreams').on('value', snap=>{
     document.getElementById('progList').innerHTML = h;
   });
 })();
+  // ===== FIX ADMIN FULL WIDTH - PASTE BEFORE =====
+(function(){
+  let a = document.querySelector('.app') || document.body;
+  if(a){ a.style.width='100%'; a.style.maxWidth='none'; a.style.margin='0'; a.style.height='auto'; a.style.minHeight='100vh'; }
+  document.body.style.display='block';
+  document.body.style.justifyContent='flex-start';
+  let box = document.getElementById('progTitle');
+  if(box){
+    let p = box.closest('div');
+    if(p){ p.style.margin='12px'; p.style.width='calc(100% - 24px)'; }
+  }
+})();
   
 </script>
 </body>

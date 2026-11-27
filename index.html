@@ -29,11 +29,13 @@ input{width:100%;background:#1a1a1a;border:1px solid #2a2a2a;color:#fff;padding:
 .nowTop{background:#0033cc;border-radius:12px;margin:8px 12px;padding:14px}
 .nowTop p{font-size:12px;color:#cce0ff}.nowTop b{font-size:17px}
 #countdown{font-size:28px;font-weight:800;margin-top:6px}
+#blackBar{display:none;background:#000;color:#fff;border:2px solid #fff;text-align:center;padding:12px;font-weight:800;font-size:16px;margin:8px 12px;border-radius:12px}
 </style>
 </head>
 <body>
 <div class="app">
 <div class="top"><b>Hit TV <span>by Inno</span> - ADMIN</b><span class="setBtn">● ADMIN</span></div>
+<div id="blackBar">⬛ BLACK 2 SEC - NEXT SONG COMING...</div>
 <div class="nowTop"><p>🎵 NOW PLAYING ON VIEWER APP</p><b id="nowPlayingTop">Waiting for Viewer...</b><p id="nowPlayingSub">Viewer will send back what is playing</p><div id="countdown">-- : --</div><p style="font-size:11px">Time left for this song / program / live</p></div>
 <div class="page active" id="page-home">
 <div class="card"><h3>1. Add to Lineup</h3><p class="sub">Viewer will play it, but will NOT see lineup list.</p><input id="aTitle" placeholder="Song Title - e.g. Butta my bread"><input id="aDetail" placeholder="Artist / Detail - e.g. Lasmid ft Jzyno"><input id="aUrl" placeholder="Paste YouTube Link OR MP4 Link"><input id="aDuration" type="number" placeholder="Duration in seconds for YouTube (e.g. 240)"><button class="btn" onclick="addToLineup()">+ Add to Lineup</button></div>
@@ -63,10 +65,11 @@ input{width:100%;background:#1a1a1a;border:1px solid #2a2a2a;color:#fff;padding:
 const firebaseConfig={apiKey:"AIzaSyBT9bXCGb6WgriW1wodo6IeRKOUQ5jdCes",authDomain:"hit-tv-app-40fb9.firebaseapp.com",databaseURL:"https://hit-tv-app-40fb9-default-rtdb.firebaseio.com",projectId:"hit-tv-app-40fb9",storageBucket:"hit-tv-app-40fb9.firebasestorage.app",messagingSenderId:"740828744097",appId:"1:740828744097:web:49104b3522d02de64ce3e0"};
 firebase.initializeApp(firebaseConfig); const db=firebase.database();
 let nowData=null, lineupCache={}, reqCache={};
+let adminNextTimer=null, adminCountTimer=null, lastAutoTitle="";
 function showTab(id,el){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.nav').forEach(n=>n.classList.remove('active'));document.getElementById('page-'+id).classList.add('active');el.classList.add('active');}
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function addToLineup(){let title=document.getElementById('aTitle').value.trim(),detail=document.getElementById('aDetail').value.trim(),url=document.getElementById('aUrl').value.trim(),dur=parseInt(document.getElementById('aDuration').value)||240; if(!title||!url) return alert('Fill Title + Link'); db.ref('lineup').push({title,detail,url,duration:dur,order:Date.now()}); document.getElementById('aTitle').value='';document.getElementById('aUrl').value='';document.getElementById('aDetail').value=''; alert('Added!');}
-function sendControl(action){db.ref('control').set({action,time:Date.now()}); alert(action==='restart'?'Lineup RESTARTED':'Next sent - black 2 sec then next song');}
+function sendControl(action){db.ref('control').set({action,time:Date.now()}); if(action==='next'){let b=document.getElementById('blackBar'); b.style.display='block'; setTimeout(()=>{b.style.display='none';},2000);} alert(action==='restart'?'Lineup RESTARTED':'Next sent - black 2 sec then next song');}
 function saveTicker(){let t=document.getElementById('tickerText').value.trim(); if(!t) return alert('Type ticker'); db.ref('ticker').set({text:t}); alert('Ticker Updated!');}
 function forceLive(key){let item=lineupCache[key]; if(!item) return; db.ref('liveOverride').set({url:item.url,title:item.title,detail:item.detail||'',duration:item.duration||240,type:'forced',startedAt:Date.now()}); alert('FORCED LIVE: '+item.title);}
 function clearOverride(){db.ref('liveOverride').remove(); db.ref('control').set({action:'restart',time:Date.now()}); alert('Back to Loop');}
@@ -88,6 +91,21 @@ function clearNotification(){db.ref('notification').remove(); alert('Notificatio
 function saveProgram(){let t=document.getElementById('progTitle').value.trim(),u=document.getElementById('progUrl').value.trim(),tm=document.getElementById('progTime').value.trim(),d=parseInt(document.getElementById('progDur').value)||300; if(!t||!u||!tm) return alert('Fill Title + Link + Time'); db.ref('programs').push({title:t,url:u,startTime:tm,duration:d}); document.getElementById('progMsg').innerText='Saved! Will play at '+tm+' for '+d+' seconds, full once, then auto-delete';}
 function deleteProgram(k){if(confirm('Delete this program?')) db.ref('programs/'+k).remove();}
 function fmt(s){if(s<0) s=0; let m=Math.floor(s/60),ss=Math.floor(s%60); return String(m).padStart(2,'0')+' : '+String(ss).padStart(2,'0');}
+function adminAutoNext(){
+  if(!nowData||!nowData.startedAt||!nowData.duration) return;
+  if(nowData.type!=='LINEUP') return;
+  if(adminNextTimer) clearTimeout(adminNextTimer);
+  let elapsed=(Date.now()-nowData.startedAt)/1000;
+  let left=nowData.duration-elapsed;
+  if(left<=0) left=0;
+  let myTitle=nowData.title;
+  adminNextTimer=setTimeout(()=>{
+    if(!nowData||nowData.title!==myTitle) return;
+    let b=document.getElementById('blackBar'); b.style.display='block';
+    db.ref('control').set({action:'next',time:Date.now()});
+    setTimeout(()=>{b.style.display='none';},2000);
+  },(left*1000)+1500);
+}
 setInterval(()=>{
   if(!nowData||!nowData.startedAt||!nowData.duration){document.getElementById('countdown').innerText='-- : --'; document.getElementById('countdown2').innerText='-- : --'; return;}
   let elapsed=(Date.now()-nowData.startedAt)/1000; let left=nowData.duration-elapsed;
@@ -95,8 +113,8 @@ setInterval(()=>{
   document.getElementById('countdown2').innerText=fmt(left);
 },500);
 db.ref('lineup').on('value',snap=>{let v=snap.val()||{}; lineupCache=v; let html=''; Object.keys(v).forEach(k=>{let it=v[k]; html+=`<div class="item"><div><b>${esc(it.title)}</b><p>${esc(it.detail||'')}</p></div><div style="display:flex;gap:6px"><button class="small" style="background:#00a651;color:#fff" onclick="forceLive('${k}')">LIVE</button><button class="small" style="background:#e60000;color:#fff" onclick="deleteItem('${k}')">DEL</button></div></div>`;}); document.getElementById('lineupList').innerHTML=html||'No lineup yet.';});
-db.ref('liveOverride').on('value',snap=>{let d=snap.val(); document.getElementById('nowPlaying').innerText=d?'FORCED: '+d.title:'LINEUP LOOP PLAYING'; if(d){nowData={title:d.title,startedAt:d.startedAt||Date.now(),duration:d.duration||3600};}});
-db.ref('nowPlaying').on('value',snap=>{let d=snap.val(); if(!d) return; nowData=d; document.getElementById('nowPlayingTop').innerText=d.title||'Playing'; document.getElementById('nowPlayingSub').innerText=(d.type||'')+' • '+(d.detail||''); document.getElementById('nowPlaying').innerText=d.title;});
+db.ref('liveOverride').on('value',snap=>{let d=snap.val(); document.getElementById('nowPlaying').innerText=d?'FORCED: '+d.title:'LINEUP LOOP PLAYING'; if(d){nowData={title:d.title,startedAt:d.startedAt||Date.now(),duration:d.duration||3600,type:d.type||'FORCED'}; if(adminNextTimer) clearTimeout(adminNextTimer);}});
+db.ref('nowPlaying').on('value',snap=>{let d=snap.val(); if(!d) return; nowData=d; document.getElementById('nowPlayingTop').innerText=d.title||'Playing'; document.getElementById('nowPlayingSub').innerText=(d.type||'')+' • '+(d.detail||''); document.getElementById('nowPlaying').innerText=d.title; adminAutoNext();});
 db.ref('programs').on('value',snap=>{let v=snap.val()||{}; let html=''; Object.keys(v).forEach(k=>{let p=v[k]; html+=`<div class="item"><div><b>${esc(p.title)}</b><p>${esc(p.startTime)} - ${p.duration} sec</p></div><button class="small" style="background:#e60000;color:#fff" onclick="deleteProgram('${k}')">DEL</button></div>`;}); document.getElementById('progList').innerHTML=html||'No programs yet.';});
 db.ref('audioStreams').on('value',snap=>{let v=snap.val()||{}; let html=''; Object.keys(v).forEach(k=>{let a=v[k]; html+=`<div class="item"><div><b>${esc(a.title)}</b><p>${esc(a.url)}</p></div><button class="small" style="background:#e60000;color:#fff" onclick="deleteAudio('${k}')">DEL</button></div>`;}); document.getElementById('audioListAdmin').innerHTML=html||'No audios yet.';});
 db.ref('notification').on('value',snap=>{let d=snap.val(); document.getElementById('notifList').innerHTML=d?`<div class="item"><div><b>${esc(d.text)}</b></div></div>`:'No active notification.';});
@@ -104,4 +122,4 @@ db.ref('comments').on('value',snap=>{let v=snap.val()||{}; let html=''; Object.k
 db.ref('requests').on('value',snap=>{let v=snap.val()||{}; reqCache=v; let html=''; Object.keys(v).reverse().forEach(k=>{let r=v[k]; html+=`<div class="item"><div><b>${esc(r.name)} - ${esc(r.song)}</b><p>${esc(r.link||'')}</p></div><button class="small" style="background:#0033cc;color:#fff" onclick="addReqToLineup('${k}')">+ ADD</button></div>`;}); document.getElementById('reqList').innerHTML=html||'No requests yet.';});
 </script>
 </body>
-</html> 
+</html>

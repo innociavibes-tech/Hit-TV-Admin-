@@ -206,54 +206,37 @@ db.ref('audioStreams').on('value', snap=>{
   Object.keys(v).forEach(k=>{ let a=v[k]; html+=`<div class="item"><div><b>${a.title}</b><p>${a.detail||''}</p></div><button class="small" style="background:#e60000;color:#fff" onclick="deleteAudio('${k}')">DEL</button></div>`; });
   document.getElementById('audioAdminList').innerHTML=html||'No audios yet.';
 });
-  // ===== ADMIN SET PROGRAM - PASTE BEFORE ONLY =====
+  // ===== PROGRAM - ADMIN, LIKE LAST APP =====
 (function(){
+  let old = document.getElementById('adminProgBox'); if(old) old.remove();
   let box = document.createElement('div');
-  box.style.cssText = "background:#161616;border:1px solid #333;border-radius:12px;padding:14px;margin:12px";
-  box.innerHTML = '<h3 style="margin-bottom:10px">Set Program - Forces Viewer</h3>'
-    + '<input id="progTitle" placeholder="Program Title" style="margin-bottom:8px">'
-    + '<input id="progUrl" placeholder="YouTube / MP4 Link" style="margin-bottom:8px">'
-    + '<input id="progTime" type="time" style="margin-bottom:8px">'
-    + '<input id="progDur" type="number" placeholder="Duration in seconds - e.g. 240" style="margin-bottom:8px">'
-    + '<button id="progSave" style="width:100%;background:#0033cc;color:#fff;border:none;padding:13px;border-radius:10px;font-weight:800;cursor:pointer">Save Program</button>'
-    + '<p id="progMsg" style="font-size:12px;color:#00ff88;margin-top:8px"></p>'
-    + '<div id="progList" style="margin-top:10px"></div>';
-  document.body.appendChild(box);
-
+  box.id = 'adminProgBox';
+  box.style.cssText = "background:#161616;border:1px solid #333;border-radius:12px;padding:14px;margin:12px;width:calc(100% - 24px);box-sizing:border-box";
+  box.innerHTML = '<h3>Set Program</h3>'
+    + '<input id="progTitle" placeholder="Program Title">'
+    + '<input id="progUrl" placeholder="Link e.g. https://youtu.be/...">'
+    + '<input id="progTime" type="time">'
+    + '<input id="progDur" type="number" placeholder="Duration in seconds e.g. 300">'
+    + '<button id="progSave" style="width:100%;background:#0033cc;color:#fff;border:none;padding:13px;border-radius:10px;font-weight:800">Save Program</button>'
+    + '<p id="progMsg" style="font-size:12px;color:#00ff88"></p><div id="progList"></div>';
+  (document.querySelector('.app')||document.body).appendChild(box);
   document.getElementById('progSave').onclick = function(){
     let t = document.getElementById('progTitle').value.trim();
     let u = document.getElementById('progUrl').value.trim();
     let tm = document.getElementById('progTime').value.trim();
-    let d = parseInt(document.getElementById('progDur').value.trim()) || 240;
+    let d = parseInt(document.getElementById('progDur').value) || 300;
     if(!t || !u || !tm) return alert('Fill Title + Link + Time');
     db.ref('programs').push({title:t, url:u, startTime:tm, duration:d});
-    document.getElementById('progMsg').innerText = 'Program saved! Will play at '+tm+' every day';
-    document.getElementById('progTitle').value='';
-    document.getElementById('progUrl').value='';
-    document.getElementById('progDur').value='';
+    document.getElementById('progMsg').innerText = 'Saved! Will play at '+tm+' for '+d+' seconds';
   };
-
   db.ref('programs').on('value', s=>{
-    let v = s.val()||{};
-    let h = '<b>Saved Programs:</b>';
+    let v = s.val()||{}; let h = '<b>Saved Programs:</b>';
     Object.keys(v).forEach(k=>{
       let p = v[k];
-      h += '<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:10px;padding:10px;margin-top:8px"><div><b style="font-size:13px">'+p.title+'</b><p style="font-size:11px;color:#888">'+p.startTime+' - '+p.url.substring(0,30)+'</p></div><button onclick="db.ref(\'programs/'+k+'\').remove()" style="background:#cc0000;color:#fff;border:none;padding:8px 10px;border-radius:8px;cursor:pointer">Delete</button></div>';
+      h += '<div style="display:flex;justify-content:space-between;align-items:center;background:#1a1a1a;padding:10px;margin-top:8px;border-radius:10px"><div><b>'+p.title+'</b><p style="font-size:11px;color:#888">'+p.startTime+' - '+p.duration+' sec</p></div><button onclick="db.ref(\'programs/'+k+'\').remove()" style="background:#cc0000;color:#fff;border:none;padding:8px 10px;border-radius:8px">Delete</button></div>';
     });
     document.getElementById('progList').innerHTML = h;
   });
-})();
-  // ===== FIX ADMIN FULL WIDTH - PASTE BEFORE =====
-(function(){
-  let a = document.querySelector('.app') || document.body;
-  if(a){ a.style.width='100%'; a.style.maxWidth='none'; a.style.margin='0'; a.style.height='auto'; a.style.minHeight='100vh'; }
-  document.body.style.display='block';
-  document.body.style.justifyContent='flex-start';
-  let box = document.getElementById('progTitle');
-  if(box){
-    let p = box.closest('div');
-    if(p){ p.style.margin='12px'; p.style.width='calc(100% - 24px)'; }
-  }
 })();
 
 </script>

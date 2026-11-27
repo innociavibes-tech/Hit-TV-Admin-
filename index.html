@@ -78,7 +78,7 @@ video{width:100%;border-radius:12px;background:#000}
 <div class="card"><h3>➕ Add Audio - Link</h3><input id="aTitle" placeholder="Audio Title"><input id="aDetail" placeholder="Detail - e.g. New Song"><input id="aUrl" placeholder="MP3 / Audio Link"><button class="btn-blue" onclick="addAudio()">+ ADD AUDIO BY LINK</button></div>
 <div class="card"><h3>📁 Upload Audio From My Phone - NEW</h3><input id="upName" placeholder="Song Name - e.g. My New Song"><label style="font-size:12px;color:#888">Pick audio file from phone</label><input id="upFile" type="file" accept="audio/*"><button class="btn-orange" style="width:100%" onclick="uploadAudioFile()">📤 UPLOAD AUDIO FROM PHONE</button><p id="upStatus" style="font-size:12px;color:#00ff88;margin-top:8px"></p><p style="font-size:12px;color:#888">It uploads to Firebase Storage, then adds to Audio Streams. Viewers can download it.</p></div>
 <div class="card"><h3>🎵 Audio List</h3><div id="audioList">Loading...</div></div>
-  </div>
+</div>
 <div class="page" id="p-notif">
 <div class="card"><h3>🔔 Notification Bar</h3><input id="nText" placeholder="Message for all viewers"><div class="row"><button class="btn-green" onclick="setNotif(true)">SHOW</button><button class="btn-grey" onclick="setNotif(false)">HIDE</button></div></div>
 <div class="card"><h3>📰 Ticker Text - Works</h3><input id="tickText" placeholder="Welcome to Hit TV by Inno"><button class="btn-blue" onclick="saveTicker()">SAVE TICKER</button></div>
@@ -95,14 +95,17 @@ video{width:100%;border-radius:12px;background:#000}
 const firebaseConfig={apiKey:"AIzaSyBT9bXCGb6WgriW1wodo6IeRKOUQ5jdCes",authDomain:"hit-tv-app-40fb9.firebaseapp.com",databaseURL:"https://hit-tv-app-40fb9-default-rtdb.firebaseio.com",projectId:"hit-tv-app-40fb9",storageBucket:"hit-tv-app-40fb9.firebasestorage.app",messagingSenderId:"740828744097",appId:"1:740828744097:web:49104b3522d02de64ce3e0"};
 firebase.initializeApp(firebaseConfig);const db=firebase.database();const storage=firebase.storage();
 let camStream=null,ovTimer=null;
-function doLogin(){if(document.getElementById('pass').value==="Inno123"){document.getElementById('login').style.display='none';document.getElementById('main').style.display='block';loadAll();}else alert('Wrong Password');}
+function doLogin(){if(document.getElementById('pass').value==="Inno123"){document.getElementById('login').style.display='none';document.getElementById('main').style.display='block';loadAll();ensureLiveState();}else alert('Wrong Password');}
 function show(id,el){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));document.getElementById('p-'+id).classList.add('active');el.classList.add('active');}
+function ensureLiveState(){db.ref('liveState').once('value',s=>{if(!s.val()||!s.val().startedAt){db.ref('liveState').set({startedAt:Date.now()});}});}
+function nowKampalaAdmin(){return new Date(new Date().toLocaleString("en-US",{timeZone:"Africa/Kampala"}));}
+function todayEATAdmin(){let n=nowKampalaAdmin();return n.getFullYear()+"-"+(n.getMonth()+1)+"-"+n.getDate();}
 function loadAll(){
  db.ref('lineup').on('value',s=>{let d=s.val()||{};document.getElementById('cLineup').innerText=Object.keys(d).length;let arr=Object.keys(d).map(k=>({...d[k],_k:k})).sort((a,b)=>(a.order||0)-(b.order||0));let h='';arr.forEach(v=>{h+=`<div class="item"><b>${v.order||0}. ${v.title||''}</b><p>${v.url||''} • ${v.duration||240}s</p><div class="row"><button class="btn-green" onclick="playLineupNow('${v._k}')">Play Now</button><button class="btn-red" onclick="db.ref('lineup/${v._k}').remove()">Delete</button></div></div>`;});document.getElementById('lineupList').innerHTML=h||'Empty';});
  db.ref('programs').on('value',s=>{let d=s.val()||{};document.getElementById('cProg').innerText=Object.keys(d).length;let h='';Object.keys(d).forEach(k=>{let v=d[k];h+=`<div class="item"><b>${v.title} - ⏰ ${v.startTime} EAT</b><p>${v.url}<br>Duration: ${v.duration}s • Last Played: ${v.lastPlayed||'Not yet'}</p><div class="row"><button class="btn-grey" onclick="resetProg('${k}')">Reset - Play Today Again</button><button class="btn-red" onclick="db.ref('programs/${k}').remove()">Delete</button></div></div>`;});document.getElementById('progList').innerHTML=h||'No programs';});
  db.ref('audioStreams').on('value',s=>{let d=s.val()||{};let h='';Object.keys(d).forEach(k=>{let v=d[k];h+=`<div class="item"><b>${v.title}</b><p>${v.detail||''}<br>${v.url}</p><button class="btn-red" onclick="db.ref('audioStreams/${k}').remove()">Delete</button></div>`;});document.getElementById('audioList').innerHTML=h||'No audios';});
  db.ref('requests').on('value',s=>{let d=s.val()||{};document.getElementById('cReq').innerText=Object.keys(d).length;let h='';Object.keys(d).reverse().forEach(k=>{let v=d[k];h+=`<div class="item"><b>${v.name||''} - ${v.song||''}</b><p>Phone: ${v.phone||''}<br>Link: ${v.link||''}</p><div class="row"><button class="btn-green" onclick="approveReq('${k}')">Approve to Lineup</button><button class="btn-red" onclick="db.ref('requests/${k}').remove()">Delete</button></div></div>`;});document.getElementById('reqList').innerHTML=h||'No requests'; loadUsers();});
- db.ref('comments').on('value',s=>{let d=s.val()||{};document.getElementById('cCom').innerText=Object.keys(d).length;let h='';Object.keys(d).reverse().forEach(k=>{h+=`<div class="item"><p>${d[k].text||''}</p><button class="btn-red" onclick="db.ref('comments/${k}').remove()">Delete</button></div>`;});document.getElementById('comList').innerHTML=h||'No comments';});
+ db.ref('comments').on('value',s=>{let d=s.val()||{};let h='';Object.keys(d).reverse().forEach(k=>{h+=`<div class="item"><p>${d[k].text||''}</p><button class="btn-red" onclick="db.ref('comments/${k}').remove()">Delete</button></div>`;});document.getElementById('comList').innerHTML=h||'No comments';});
  db.ref('nowPlaying').on('value',s=>{let v=s.val()||{};document.getElementById('nowT').innerText=v.title||'-';document.getElementById('nowType').innerText=v.type||'-';document.getElementById('nowDetail').innerText=v.detail||'-';});
  db.ref('ticker').on('value',s=>{let v=s.val();if(v&&v.text)document.getElementById('tickText').value=v.text;});
  db.ref('notification').on('value',s=>{let v=s.val();if(v&&v.text)document.getElementById('nText').value=v.text;});
@@ -119,7 +122,8 @@ function loadUsers(){
 function addLineup(){let t=document.getElementById('lTitle').value,u=document.getElementById('lUrl').value,d=parseInt(document.getElementById('lDur').value)||240,o=parseInt(document.getElementById('lOrder').value)||0;if(!t||!u)return alert('Fill Title + Link');db.ref('lineup').push({title:t,url:u,duration:d,order:o});alert('Added!');}
 function playLineupNow(k){db.ref('lineup/'+k).once('value',s=>{let v=s.val();let dur=parseInt(v.duration)||240;db.ref('liveOverride').set({title:v.title,detail:'INSTANT LIVE',url:v.url,startedAt:Date.now(),duration:dur,endsAt:Date.now()+dur*1000});alert('Playing NOW! Will auto-return after '+dur+'s');});}
 function startOverride(){let t=document.getElementById('ovTitle').value,u=document.getElementById('ovUrl').value,det=document.getElementById('ovDetail').value,dur=parseInt(document.getElementById('ovDur').value)||300;if(!u)return alert('Paste Link');if(ovTimer)clearTimeout(ovTimer);db.ref('liveOverride').set({title:t||'LIVE',detail:det||'INSTANT LIVE',url:u,startedAt:Date.now(),duration:dur,endsAt:Date.now()+dur*1000});ovTimer=setTimeout(()=>{stopAll();},dur*1000);alert('LIVE STARTED! Will auto-stop in '+dur+'s and go back to lineup.');}
-function stopAll(){if(ovTimer)clearTimeout(ovTimer);db.ref('liveOverride').remove();stopCameraReal();alert('STOPPED ALL - Removed from playing - Back to Lineup song');}
+function stopAll(){if(ovTimer)clearTimeout(ovTimer);stopCameraOnly();db.ref('liveOverride').remove();alert('STOPPED ALL - Removed from playing - Back to Lineup song');}
+function stopCameraOnly(){if(camStream){camStream.getTracks().forEach(t=>t.stop());camStream=null;}let v=document.getElementById('camPreview');if(v)v.style.display='none';let st=document.getElementById('camStatus');if(st)st.innerText='Camera is OFF';}
 function startCamera(){db.ref('liveOverride').set({type:'camera',startedAt:Date.now()});}
 async function startCameraReal(){
  try{
@@ -130,7 +134,7 @@ async function startCameraReal(){
   alert('FRONT CAMERA OPEN + GO LIVE!');
  }catch(e){alert('Camera failed: '+e.message+' - Allow camera permission in browser');}
 }
-function stopCameraReal(){if(camStream){camStream.getTracks().forEach(t=>t.stop());camStream=null;}document.getElementById('camPreview').style.display='none';document.getElementById('camStatus').innerText='Camera is OFF';db.ref('liveOverride').remove();}
+function stopCameraReal(){stopCameraOnly();db.ref('liveOverride').remove();}
 function addProg(){let t=document.getElementById('pTitle').value,u=document.getElementById('pUrl').value,tm=document.getElementById('pTime').value,d=parseInt(document.getElementById('pDur').value)||300;if(!t||!u||!tm)return alert('Fill Title + Link + Time');db.ref('programs').push({title:t,url:u,startTime:tm,duration:d,lastPlayed:""});alert('Program Scheduled for '+tm+' EAT! Will play every day.');}
 function resetProg(k){db.ref('programs/'+k).update({lastPlayed:""});alert('Reset! Can play again today.');}
 function addAudio(){let t=document.getElementById('aTitle').value,det=document.getElementById('aDetail').value,u=document.getElementById('aUrl').value;if(!t||!u)return alert('Fill Title + Link');db.ref('audioStreams').push({title:t,detail:det,url:u});alert('Audio Added!');}
@@ -148,10 +152,15 @@ async function uploadAudioFile(){
 }
 function setNotif(on){let txt=document.getElementById('nText').value;if(on){db.ref('notification').set({text:txt});}else{db.ref('notification').remove();}alert(on?'Notification SHOWN':'Notification HIDDEN');}
 function saveTicker(){db.ref('ticker').set({text:document.getElementById('tickText').value});alert('Ticker Saved!');}
-function controlAction(a){db.ref('control').set({action:a});alert(a==='next'?'Next Video!':'Restarting Live...');}
+function controlAction(a){db.ref('control').set({action:a,at:Date.now()});alert(a==='next'?'Next Video!':'Restarting Live...');setTimeout(()=>{db.ref('control').remove();},2000);}
 function approveReq(k){db.ref('requests/'+k).once('value',s=>{let v=s.val();if(v.link)db.ref('lineup').push({title:(v.name||'')+' - '+(v.song||''),url:v.link,duration:240,order:99});alert('Approved!');});}
 function clearCom(){if(confirm('Clear all comments?'))db.ref('comments').remove();}
 function saveAds(){db.ref('ads').set({on:document.getElementById('adsOn').value,title:document.getElementById('adsTitle').value,image:document.getElementById('adsImg').value,link:document.getElementById('adsLink').value,interval:parseInt(document.getElementById('adsTime').value)||300});alert('Ads Saved!');}
+// AUTO-CLEAN: If Admin was closed, clean expired Instant Live + expired Programs when Admin re-opens
+setInterval(()=>{
+ db.ref('liveOverride').once('value',s=>{let d=s.val();if(d&&d.endsAt&&Date.now()>d.endsAt){db.ref('liveOverride').remove();}});
+ db.ref('programs').once('value',s=>{let progs=s.val()||{};let today=todayEATAdmin();let now=nowKampalaAdmin();let nowMin=now.getHours()*60+now.getMinutes();Object.keys(progs).forEach(k=>{let p=progs[k];if(!p||!p.startTime)return;if(p.lastPlayed===today)return;let a=p.startTime.split(":");let startMin=parseInt(a[0])*60+parseInt(a[1]);let dur=parseInt(p.duration)||300;let passed=(nowMin-startMin)*60+now.getSeconds();if(passed>=dur){db.ref('programs/'+k).update({lastPlayed:today});}});});
+},5000);
 </script>
 </body>
 </html>

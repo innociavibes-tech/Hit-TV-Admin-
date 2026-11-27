@@ -15,7 +15,7 @@ body{background:#000;display:flex;justify-content:center;min-height:100vh}
 .card h3{font-size:15px;margin-bottom:4px}.card p.sub{color:#888;font-size:12px}
 input{width:100%;background:#1a1a1a;border:1px solid #2a2a2a;color:#fff;padding:13px;border-radius:10px;outline:none;margin-top:8px}
 .btn{width:100%;background:#0033cc;color:#fff;border:none;padding:13px;border-radius:10px;font-weight:800;margin-top:10px;cursor:pointer}
-.btn.green{background:#00a651}.btn.red{background:#e60000}.btn.gray{background:#333}
+.btn.green{background:#00a651}.btn.red{background:#e60000}.btn.gray{background:#333}.btn.orange{background:#ff6600}
 .row{display:flex;gap:8px}.row>*{flex:1}
 .item{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:10px;padding:11px;margin-top:8px;display:flex;justify-content:space-between;gap:8px;align-items:center}
 .item b{font-size:13px;display:block}.item p{font-size:11px;color:#888}
@@ -26,13 +26,23 @@ input{width:100%;background:#1a1a1a;border:1px solid #2a2a2a;color:#fff;padding:
 .nav{flex:1;text-align:center;padding:8px 2px;font-size:11px;color:#888;cursor:pointer;border-radius:10px}
 .nav.active{background:#0033cc;color:#fff}
 .nav b{display:block;font-size:16px}
+#camPreview{width:100%;border-radius:10px;background:#000;margin-top:8px;display:none}
+.nowTop{background:#0033cc;border-radius:12px;margin:8px 12px;padding:14px}
+.nowTop p{font-size:12px;color:#cce0ff}.nowTop b{font-size:16px}
 </style>
 </head>
 <body>
 <div class="app">
   <div class="top"><b>Hit TV <span>by Inno</span> - ADMIN</b><span class="setBtn">● ADMIN</span></div>
 
-  <!-- HOME / LINEUP -->
+  <!-- NOW PLAYING ON TOP -->
+  <div class="nowTop">
+    <p>🎵 NOW PLAYING ON VIEWER</p>
+    <b id="nowPlayingTop">LINEUP LOOP</b>
+    <p id="nowPlayingSub">Viewer is playing lineup loop</p>
+  </div>
+
+  <!-- LINEUP -->
   <div class="page active" id="page-home">
     <div class="card"><h3>1. Add to Lineup</h3><p class="sub">Viewer will play it, but will NOT see lineup list. Only NOW PLAYING / NEXT.</p>
     <input id="aTitle" placeholder="Song Title - e.g. Butta my bread">
@@ -41,7 +51,7 @@ input{width:100%;background:#1a1a1a;border:1px solid #2a2a2a;color:#fff;padding:
     <input id="aDuration" type="number" placeholder="Duration in seconds for YouTube (e.g. 240)">
     <button class="btn" onclick="addToLineup()">+ Add to Lineup</button></div>
 
-    <div class="card"><h3>2. Live Control - ALIVE LINEUP</h3><p class="sub">Now on Viewer: <span class="live" id="nowPlaying">LINEUP LOOP</span></p><p class="sub" id="liveInfo" style="margin-top:4px">Live clock not started yet. Press START.</p>
+    <div class="card"><h3>2. Live Control</h3><p class="sub">Now on Viewer: <span class="live" id="nowPlaying">LINEUP LOOP</span></p>
     <div class="row"><button class="btn green" onclick="sendControl('restart')">▶ START / RESTART</button><button class="btn" onclick="sendControl('next')">⏭ NEXT</button></div>
     <button class="btn red" onclick="clearOverride()">■ STOP FORCED LIVE - Back to Loop</button></div>
 
@@ -50,14 +60,38 @@ input{width:100%;background:#1a1a1a;border:1px solid #2a2a2a;color:#fff;padding:
     <button class="btn" onclick="saveTicker()">Update Ticker on Viewer</button></div>
 
     <div class="card"><h3>4. Current Lineup - Only Admin Sees This</h3><div id="lineupList">Loading...</div></div>
+  </div>
 
-    <!-- 5. AUDIO STREAMS - NEW -->
-    <div class="card"><h3>5. Audio Streams - Upload for Viewers to Download</h3><p class="sub">Admin uploads audio here. Viewer sees it in Audio Streams tab + Download button.</p>
-    <input id="auTitle" placeholder="Audio Title - e.g. New Song Audio">
-    <input id="auDetail" placeholder="Artist / Detail - e.g. Lasmid">
-    <input id="auUrl" placeholder="Paste MP3 / Audio Link">
-    <button class="btn" onclick="addAudio()">+ Upload Audio Stream</button>
-    <div id="audioAdminList" style="margin-top:8px">No audios yet.</div></div>
+  <!-- LIVE - INSTANT LIVE + CAMERA + NOTIFICATION -->
+  <div class="page" id="page-live">
+    <div class="card"><h3>⚡ Instant Live Only</h3><p class="sub">Paste a live link, it goes live INSTANTLY. Stops Lineup.</p>
+    <input id="liveTitle" placeholder="Live Title - e.g. Live Show Now">
+    <input id="liveUrl" placeholder="Paste YouTube Live / MP4 Live Link">
+    <button class="btn red" onclick="goInstantLive()">🔴 GO INSTANT LIVE NOW</button>
+    <button class="btn gray" onclick="clearOverride()">■ STOP INSTANT LIVE</button></div>
+
+    <div class="card"><h3>📷 Camera - Go Live With Camera</h3><p class="sub">Open your camera here, preview, then go live.</p>
+    <video id="camPreview" autoplay muted playsinline></video>
+    <div class="row"><button class="btn" onclick="openCamera()">📷 Open Camera</button><button class="btn gray" onclick="closeCamera()">Close Camera</button></div>
+    <button class="btn red" onclick="goCameraLive()">🔴 GO LIVE WITH CAMERA</button>
+    <p class="sub" id="camMsg">Camera preview is in Admin. Viewer will see CAMERA LIVE.</p></div>
+
+    <div class="card"><h3>🔔 Send Notification to Viewers</h3><p class="sub">All viewers will see this on top of Viewer.</p>
+    <input id="notifText" placeholder="e.g. Big show starting in 5 mins! Stay tuned">
+    <button class="btn orange" onclick="sendNotification()">📣 SEND NOTIFICATION</button>
+    <button class="btn gray" onclick="clearNotification()">Clear Notification</button>
+    <div id="notifList"></div></div>
+  </div>
+
+  <!-- PROGRAM - LIKE LAST APP, NO 9999 -->
+  <div class="page" id="page-program">
+    <div class="card"><h3>📺 Set Program - Like Last App</h3><p class="sub">Real Duration in seconds. NO 9999. Viewer will play Program at that time, then back to Lineup.</p>
+    <input id="progTitle" placeholder="Program Title - e.g. Evening Show">
+    <input id="progUrl" placeholder="Paste YouTube Link e.g. https://youtu.be/...">
+    <input id="progTime" type="time">
+    <input id="progDur" type="number" placeholder="Duration in seconds e.g. 300">
+    <button class="btn" onclick="saveProgram()">Save Program</button>
+    <p class="sub" id="progMsg"></p><div id="progList"></div></div>
   </div>
 
   <!-- COMMENTS -->
@@ -65,21 +99,24 @@ input{width:100%;background:#1a1a1a;border:1px solid #2a2a2a;color:#fff;padding:
     <div class="card"><h3>Live Comments - From Viewers</h3><div id="commentList">No comments yet.</div></div>
   </div>
 
-  <!-- REQUESTS - WITH PHONE -->
+  <!-- REQUESTS -->
   <div class="page" id="page-requests">
-    <div class="card"><h3>Artist Requests - With Phone / WhatsApp</h3><p class="sub">Artist name, song, phone number, link. Tap + ADD to add to lineup.</p><div id="reqList">No requests yet.</div></div>
+    <div class="card"><h3>Artist Requests</h3><div id="reqList">No requests yet.</div></div>
   </div>
 
   <!-- SETTINGS -->
   <div class="page" id="page-settings">
-    <div class="card"><h3>Admin Settings</h3><p class="sub">App: Hit TV by Inno<br>Size: 390px / 430px / 100vh<br>Firebase: hit-tv-app-40fb9<br>Viewer + Admin connected - ALIVE LINEUP</p>
-    <button class="btn gray" onclick="if(confirm('Clear ALL lineup?')){ db.ref('lineup').remove(); db.ref('liveState').remove(); }">Clear All Lineup</button>
+    <div class="card"><h3>Admin Settings</h3><p class="sub">App: Hit TV by Inno<br>Size: 390px / 430px / 100vh<br>Firebase: hit-tv-app-40fb9<br>Viewer + Admin connected</p>
+    <button class="btn gray" onclick="if(confirm('Clear ALL lineup?')) db.ref('lineup').remove()">Clear All Lineup</button>
     <button class="btn gray" onclick="if(confirm('Clear Comments?')) db.ref('comments').remove()">Clear Comments</button>
-    <button class="btn gray" onclick="if(confirm('Clear Audio Streams?')) db.ref('audioStreams').remove()">Clear Audio Streams</button></div>
+    <button class="btn gray" onclick="if(confirm('Clear Programs?')) db.ref('programs').remove()">Clear All Programs</button>
+    <button class="btn gray" onclick="if(confirm('Clear Notification?')) db.ref('notification').remove()">Clear Notification</button></div>
   </div>
 
   <div class="bottom">
     <div class="nav active" onclick="showTab('home',this)"><b>⌂</b>Lineup</div>
+    <div class="nav" onclick="showTab('live',this)"><b>🔴</b>Live</div>
+    <div class="nav" onclick="showTab('program',this)"><b>📺</b>Program</div>
     <div class="nav" onclick="showTab('comments',this)"><b>💬</b>Comments</div>
     <div class="nav" onclick="showTab('requests',this)"><b>★</b>Requests</div>
     <div class="nav" onclick="showTab('settings',this)"><b>⚙</b>Settings</div>
@@ -100,145 +137,67 @@ const firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
-let lineupCache=[], liveStartedAt=0, forced=null;
 function showTab(id,el){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.nav').forEach(n=>n.classList.remove('active'));document.getElementById('page-'+id).classList.add('active');el.classList.add('active');}
-
-// ===== ALIVE LINEUP HELPERS =====
-function getLiveNow(){
-  if(!lineupCache.length||!liveStartedAt) return null;
-  let total=lineupCache.reduce((s,x)=>s+(x.duration||240),0);
-  if(total<=0) return null;
-  let elapsed=Math.floor((Date.now()-liveStartedAt)/1000);
-  let pos=elapsed%total;
-  let acc=0;
-  for(let i=0;i<lineupCache.length;i++){
-    let dur=lineupCache[i].duration||240;
-    if(pos<acc+dur) return {index:i, item:lineupCache[i], offset:pos-acc, remaining:dur-(pos-acc)};
-    acc+=dur;
-  }
-  return {index:0,item:lineupCache[0],offset:0,remaining:lineupCache[0].duration||240};
-}
-function updateLiveLabel(){
-  if(forced){ document.getElementById('nowPlaying').innerText='FORCED: '+forced.title; document.getElementById('liveInfo').innerText='Forced live - loop paused'; return; }
-  let now=getLiveNow();
-  if(!now){ document.getElementById('nowPlaying').innerText='LINEUP LOOP'; document.getElementById('liveInfo').innerText='Live clock not started yet. Press START.'; return; }
-  let next=lineupCache[(now.index+1)%lineupCache.length];
-  document.getElementById('nowPlaying').innerText=now.item.title+' ('+Math.floor(now.offset)+'s in)';
-  document.getElementById('liveInfo').innerText='Next: '+(next?next.title:'-')+' in '+now.remaining+'s - ALIVE, viewers join in middle';
-}
-setInterval(updateLiveLabel,1000);
-
 function addToLineup(){
   let title=document.getElementById('aTitle').value.trim(), detail=document.getElementById('aDetail').value.trim(), url=document.getElementById('aUrl').value.trim(), dur=parseInt(document.getElementById('aDuration').value)||240;
   if(!title||!url) return alert('Fill Title + Link');
   db.ref('lineup').push({title, detail, url, duration:dur, order:Date.now()});
   document.getElementById('aTitle').value='';document.getElementById('aUrl').value='';document.getElementById('aDetail').value='';
-  db.ref('liveState').once('value', snap=>{
-    if(!snap.val()) db.ref('liveState').set({startedAt: Date.now()});
-  });
-  alert('Added! Viewer will play it. Viewer will NOT see lineup list.');
+  alert('Added! Viewer will play it.');
 }
-
-// ===== FIXED sendControl - ALIVE =====
-function sendControl(action){
-  if(action==='restart'){
-    db.ref('liveState').set({startedAt: Date.now()});
-    db.ref('liveOverride').remove();
-    db.ref('control').set({action:'restart', time:Date.now()});
-    alert('LIVE RESTARTED - Viewers join live from Song 1 now');
-    return;
-  }
-  if(action==='next'){
-    let now=getLiveNow();
-    if(!now||!lineupCache.length){ alert('No lineup playing'); return; }
-    let nextIndex=(now.index+1)%lineupCache.length;
-    let sumBefore=0; for(let i=0;i<nextIndex;i++) sumBefore+=(lineupCache[i].duration||240);
-    let newStartedAt = Date.now() - (sumBefore*1000);
-    db.ref('liveState').set({startedAt: newStartedAt});
-    db.ref('control').set({action:'none', time:Date.now()});
-    alert('NEXT sent - Viewer now on: '+lineupCache[nextIndex].title+' IMMEDIATELY');
-    return;
-  }
-}
+function sendControl(action){ db.ref('control').set({action, time:Date.now()}); alert(action==='restart'?'Lineup RESTARTED on Viewer':'Next song sent to Viewer'); }
 function saveTicker(){ let t=document.getElementById('tickerText').value.trim(); if(!t) return alert('Type ticker'); db.ref('ticker').set({text:t}); alert('Ticker Updated on Viewer!'); }
-function forceLive(item){ db.ref('liveOverride').set({url:item.url, title:item.title, detail:item.detail, duration:item.duration}); alert('FORCED LIVE on Viewer: '+item.title); }
-function clearOverride(){
-  db.ref('liveOverride').remove();
-  db.ref('liveState').set({startedAt: Date.now()});
-  alert('Back to ALIVE Lineup Loop on Viewer');
-}
+function forceLive(item){ db.ref('liveOverride').set({url:item.url, title:item.title, detail:item.detail, duration:item.duration, type:'forced'}); alert('FORCED LIVE on Viewer: '+item.title); }
+function clearOverride(){ db.ref('liveOverride').remove(); db.ref('control').set({action:'restart', time:Date.now()}); alert('Back to Lineup Loop on Viewer'); }
 function deleteItem(key){ if(confirm('Delete this song?')) db.ref('lineup/'+key).remove(); }
-function addReqToLineup(r){ db.ref('lineup').push({title:r.song, detail:r.name+' • '+ (r.phone||''), url:r.link||'', duration:240, order:Date.now()}); alert('Request added to Lineup'); }
-
-// ===== 5. AUDIO STREAMS - NEW =====
-function addAudio(){
-  let t=document.getElementById('auTitle').value.trim(), d=document.getElementById('auDetail').value.trim(), u=document.getElementById('auUrl').value.trim();
-  if(!t||!u) return alert('Fill Audio Title + Audio Link');
-  db.ref('audioStreams').push({title:t, detail:d, url:u, time:Date.now()});
-  document.getElementById('auTitle').value=''; document.getElementById('auDetail').value=''; document.getElementById('auUrl').value='';
-  alert('Audio Uploaded! Viewers can now see + Download it in Audio Streams.');
+function addReqToLineup(r){ db.ref('lineup').push({title:r.song, detail:r.name, url:r.link||'', duration:240, order:Date.now()}); alert('Request added to Lineup'); }
+function goInstantLive(){
+  let t=document.getElementById('liveTitle').value.trim(), u=document.getElementById('liveUrl').value.trim();
+  if(!t||!u) return alert('Fill Live Title + Live Link');
+  db.ref('liveOverride').set({title:t, url:u, detail:'INSTANT LIVE', duration:3600, type:'instant', time:Date.now()});
+  alert('INSTANT LIVE ON Viewer: '+t);
 }
-function deleteAudio(key){ if(confirm('Delete this audio?')) db.ref('audioStreams/'+key).remove(); }
-
+let camStream=null;
+async function openCamera(){
+  try{ camStream=await navigator.mediaDevices.getUserMedia({video:true,audio:true}); let v=document.getElementById('camPreview'); v.style.display='block'; v.srcObject=camStream; document.getElementById('camMsg').innerText='Camera ON - Previewing. Now press GO LIVE WITH CAMERA.'; }
+  catch(e){ alert('Camera blocked. Allow camera permission.'); }
+}
+function closeCamera(){ if(camStream){ camStream.getTracks().forEach(t=>t.stop()); camStream=null; } let v=document.getElementById('camPreview'); v.style.display='none'; v.srcObject=null; }
+function goCameraLive(){ if(!camStream) return alert('Open Camera first!'); db.ref('liveOverride').set({title:'CAMERA LIVE - Hit TV by Inno', url:'', detail:'CAMERA LIVE', duration:3600, type:'camera', time:Date.now()}); alert('CAMERA LIVE sent to Viewer!'); }
+function sendNotification(){ let t=document.getElementById('notifText').value.trim(); if(!t) return alert('Type notification'); db.ref('notification').set({text:t, time:Date.now()}); alert('Notification SENT to all Viewers!'); }
+function clearNotification(){ db.ref('notification').remove(); alert('Notification cleared'); }
+function saveProgram(){
+  let t=document.getElementById('progTitle').value.trim(), u=document.getElementById('progUrl').value.trim(), tm=document.getElementById('progTime').value.trim(), d=parseInt(document.getElementById('progDur').value)||300;
+  if(!t||!u||!tm) return alert('Fill Title + Link + Time');
+  db.ref('programs').push({title:t, url:u, startTime:tm, duration:d});
+  document.getElementById('progMsg').innerText='Saved! Will play at '+tm+' for '+d+' seconds';
+}
+function deleteProgram(k){ if(confirm('Delete this program?')) db.ref('programs/'+k).remove(); }
 db.ref('lineup').on('value', snap=>{
-  let v=snap.val()||{}; lineupCache=Object.keys(v).map(k=>({...v[k],_key:k})); lineupCache.sort((a,b)=>(a.order||0)-(b.order||0));
-  let html=''; Object.keys(v).forEach(k=>{ let it=v[k]; html+=`<div class="item"><div><b>${it.title}</b><p>${it.detail||''} • ${it.duration||240}s</p></div><div style="display:flex;gap:6px"><button class="small" style="background:#00a651;color:#fff" onclick='forceLive(${JSON.stringify(it).replace(/'/g,"")})'>LIVE</button><button class="small" style="background:#e60000;color:#fff" onclick="deleteItem('${k}')">DEL</button></div></div>`; });
+  let v=snap.val()||{}; let html=''; Object.keys(v).forEach(k=>{ let it=v[k]; html+=`<div class="item"><div><b>${it.title}</b><p>${it.detail||''}</p></div><div style="display:flex;gap:6px"><button class="small" style="background:#00a651;color:#fff" onclick='forceLive(${JSON.stringify(it).replace(/'/g,"")})'>LIVE</button><button class="small" style="background:#e60000;color:#fff" onclick="deleteItem('${k}')">DEL</button></div></div>`; });
   document.getElementById('lineupList').innerHTML=html||'No lineup yet. Add songs above.';
-  updateLiveLabel();
 });
-db.ref('liveState').on('value', snap=>{ let d=snap.val(); liveStartedAt=d&&d.startedAt?d.startedAt:0; updateLiveLabel(); });
-db.ref('liveOverride').on('value', snap=>{ let d=snap.val(); forced=d||null; updateLiveLabel(); });
+db.ref('liveOverride').on('value', snap=>{
+  let d=snap.val();
+  document.getElementById('nowPlaying').innerText=d? 'FORCED: '+d.title : 'LINEUP LOOP PLAYING';
+  document.getElementById('nowPlayingTop').innerText=d? d.title : 'LINEUP LOOP';
+  document.getElementById('nowPlayingSub').innerText=d? (d.type||'FORCED')+' • '+(d.detail||'') : 'Viewer is playing lineup loop';
+});
+db.ref('programs').on('value', snap=>{
+  let v=snap.val()||{}; let html=''; Object.keys(v).forEach(k=>{ let p=v[k]; html+=`<div class="item"><div><b>${p.title}</b><p>${p.startTime} - ${p.duration} sec</p></div><button class="small" style="background:#e60000;color:#fff" onclick="deleteProgram('${k}')">DEL</button></div>`; });
+  document.getElementById('progList').innerHTML=html||'No programs yet.';
+});
+db.ref('notification').on('value', snap=>{
+  let d=snap.val(); document.getElementById('notifList').innerHTML=d? `<div class="item"><div><b>${d.text}</b></div></div>` : 'No active notification.';
+});
 db.ref('comments').on('value', snap=>{
   let v=snap.val()||{}; let html=''; Object.keys(v).reverse().forEach(k=>{ let c=v[k]; html+=`<div class="item"><div><b>${c.text}</b></div></div>`; });
   document.getElementById('commentList').innerHTML=html||'No comments yet.';
 });
-// ===== REQUESTS - WITH PHONE / WHATSAPP =====
 db.ref('requests').on('value', snap=>{
-  let v=snap.val()||{}; let html='';
-  Object.keys(v).reverse().forEach(k=>{ let r=v[k];
-    html+=`<div class="item"><div><b>${r.name} - ${r.song}</b><p>📞 ${r.phone||'No phone'}<br>${r.link||''}</p></div><div style="display:flex;gap:6px;flex-direction:column"><button class="small" style="background:#0033cc;color:#fff" onclick='addReqToLineup(${JSON.stringify(r).replace(/'/g,"")})'>+ ADD</button>${r.phone?`<a href="https://wa.me/${String(r.phone).replace(/[^0-9]/g,'')}" target="_blank" style="text-decoration:none"><button class="small" style="background:#00a651;color:#fff;width:100%">WhatsApp</button></a>`:''}</div></div>`;
-  });
+  let v=snap.val()||{}; let html=''; Object.keys(v).reverse().forEach(k=>{ let r=v[k]; html+=`<div class="item"><div><b>${r.name} - ${r.song}</b><p>${r.link||''}</p></div><button class="small" style="background:#0033cc;color:#fff" onclick='addReqToLineup(${JSON.stringify(r).replace(/'/g,"")})'>+ ADD</button></div>`; });
   document.getElementById('reqList').innerHTML=html||'No requests yet.';
 });
-// ===== AUDIO STREAMS LIST IN ADMIN =====
-db.ref('audioStreams').on('value', snap=>{
-  let v=snap.val()||{}; let html='';
-  Object.keys(v).forEach(k=>{ let a=v[k]; html+=`<div class="item"><div><b>${a.title}</b><p>${a.detail||''}</p></div><button class="small" style="background:#e60000;color:#fff" onclick="deleteAudio('${k}')">DEL</button></div>`; });
-  document.getElementById('audioAdminList').innerHTML=html||'No audios yet.';
-});
-  // ===== PROGRAM - ADMIN, LIKE LAST APP =====
-(function(){
-  let old = document.getElementById('adminProgBox'); if(old) old.remove();
-  let box = document.createElement('div');
-  box.id = 'adminProgBox';
-  box.style.cssText = "background:#161616;border:1px solid #333;border-radius:12px;padding:14px;margin:12px;width:calc(100% - 24px);box-sizing:border-box";
-  box.innerHTML = '<h3>Set Program</h3>'
-    + '<input id="progTitle" placeholder="Program Title">'
-    + '<input id="progUrl" placeholder="Link e.g. https://youtu.be/...">'
-    + '<input id="progTime" type="time">'
-    + '<input id="progDur" type="number" placeholder="Duration in seconds e.g. 300">'
-    + '<button id="progSave" style="width:100%;background:#0033cc;color:#fff;border:none;padding:13px;border-radius:10px;font-weight:800">Save Program</button>'
-    + '<p id="progMsg" style="font-size:12px;color:#00ff88"></p><div id="progList"></div>';
-  (document.querySelector('.app')||document.body).appendChild(box);
-  document.getElementById('progSave').onclick = function(){
-    let t = document.getElementById('progTitle').value.trim();
-    let u = document.getElementById('progUrl').value.trim();
-    let tm = document.getElementById('progTime').value.trim();
-    let d = parseInt(document.getElementById('progDur').value) || 300;
-    if(!t || !u || !tm) return alert('Fill Title + Link + Time');
-    db.ref('programs').push({title:t, url:u, startTime:tm, duration:d});
-    document.getElementById('progMsg').innerText = 'Saved! Will play at '+tm+' for '+d+' seconds';
-  };
-  db.ref('programs').on('value', s=>{
-    let v = s.val()||{}; let h = '<b>Saved Programs:</b>';
-    Object.keys(v).forEach(k=>{
-      let p = v[k];
-      h += '<div style="display:flex;justify-content:space-between;align-items:center;background:#1a1a1a;padding:10px;margin-top:8px;border-radius:10px"><div><b>'+p.title+'</b><p style="font-size:11px;color:#888">'+p.startTime+' - '+p.duration+' sec</p></div><button onclick="db.ref(\'programs/'+k+'\').remove()" style="background:#cc0000;color:#fff;border:none;padding:8px 10px;border-radius:8px">Delete</button></div>';
-    });
-    document.getElementById('progList').innerHTML = h;
-  });
-})();
-
 </script>
 </body>
-  </html>
+</html>

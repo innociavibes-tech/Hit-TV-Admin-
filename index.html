@@ -2,165 +2,176 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Hit TV ADMIN V4 - by Inno</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Hit TV - ADMIN by Inno</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',Arial,sans-serif}
-body{background:#0a0a0a;color:#fff}
-.top{background:#0033cc;padding:16px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:10}
-.top b{font-size:18px}.top span{font-size:12px;opacity:.8}
-.wrap{max-width:900px;margin:0 auto;padding:14px}
-.tabs{display:flex;gap:8px;overflow-x:auto;padding-bottom:10px}
-.tab{background:#1a1a1a;border:1px solid #333;padding:10px 14px;border-radius:20px;white-space:nowrap;cursor:pointer;font-size:13px;font-weight:700}
-.tab.active{background:#0033cc;border-color:#0033cc}
-.card{background:#161616;border:1px solid #222;border-radius:14px;padding:16px;margin-bottom:14px}
-.card h3{margin-bottom:12px;font-size:16px}
-input,select{width:100%;background:#1e1e1e;border:1px solid #333;color:#fff;padding:12px;border-radius:10px;margin-bottom:10px;outline:none}
-button{border:none;padding:12px 16px;border-radius:10px;font-weight:800;cursor:pointer}
-.btn-blue{background:#0033cc;color:#fff;width:100%}.btn-green{background:#00a651;color:#fff}.btn-red{background:#e60000;color:#fff}.btn-grey{background:#333;color:#fff}.btn-orange{background:#ff6600;color:#fff}
-.row{display:flex;gap:8px}.row button{flex:1}
-.item{background:#1e1e1e;border:1px solid #2a2a2a;border-radius:10px;padding:12px;margin-top:10px}
-.item b{font-size:14px;display:block}.item p{font-size:12px;color:#aaa;margin-top:4px;word-break:break-all}
-.stat{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:14px}
-.stat div{background:#161616;border:1px solid #222;border-radius:12px;padding:14px;text-align:center}
-.stat b{font-size:20px;display:block;color:#00ff88}.stat small{color:#888;font-size:11px}
-.page{display:none}.page.active{display:block}
-.badge{background:#00a651;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:800}
-video{width:100%;border-radius:12px;background:#000}
+body{background:#000;display:flex;justify-content:center;min-height:100vh}
+.app{width:100%;max-width:520px;min-height:100vh;background:#0a0a0a;color:#fff;display:flex;flex-direction:column;overflow-x:hidden}
+.top{display:flex;justify-content:space-between;align-items:center;padding:14px;background:#111;border-bottom:1px solid #222;position:sticky;top:0;z-index:10}
+.top b{font-size:17px}.top b span{color:#1a2fd6}
+.logout{background:#e60000;color:#fff;border:none;padding:7px 14px;border-radius:20px;font-weight:700;cursor:pointer}
+.liveCard{margin:12px;background:#111;border:1px solid #222;border-radius:12px;padding:14px}
+.liveCard small{color:#888}.liveCard h2{font-size:18px;margin:4px 0}.liveDot{color:#00ff88}
+.tabs{display:flex;gap:6px;padding:0 12px;overflow-x:auto}.tab{white-space:nowrap;background:#1a1a1a;border:1px solid #2a2a2a;color:#fff;padding:9px 14px;border-radius:20px;font-size:12px;cursor:pointer}.tab.active{background:#0033cc;border-color:#0033cc;font-weight:800}
+.page{display:none;padding:12px}.page.active{display:block}
+.card{background:#111;border:1px solid #222;border-radius:12px;padding:14px;margin-bottom:12px}.card h3{font-size:15px;margin-bottom:10px}
+input,select{width:100%;background:#1a1a1a;border:1px solid #2a2a2a;color:#fff;padding:12px;border-radius:10px;outline:none;margin-bottom:8px;font-size:14px}
+.btn{width:100%;background:#0033cc;color:#fff;border:none;padding:13px;border-radius:10px;font-weight:800;cursor:pointer;margin-bottom:8px}
+.btn.green{background:#00a651}.btn.red{background:#e60000}.btn.orange{background:#ff6600}.btn.grey{background:#333}.btn.small{width:auto;padding:8px 12px;font-size:12px;margin:0}
+.item{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:10px;padding:11px;margin-top:8px;display:flex;justify-content:space-between;gap:8px;align-items:center}
+.item b{font-size:13px;display:block}.item p{font-size:11px;color:#888}
+.row{display:flex;gap:8px}.row .btn{flex:1}
+.badge{display:inline-block;background:#0033cc;padding:3px 8px;border-radius:20px;font-size:11px;font-weight:700}.badge.green{background:#00a651}.badge.red{background:#e60000}
+#login{position:fixed;inset:0;background:#000;z-index:999;display:flex;align-items:center;justify-content:center;padding:20px}
+.loginBox{background:#111;border:1px solid #222;border-radius:16px;padding:24px;width:100%;max-width:360px;text-align:center}
+.statGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}.stat{background:#161616;border:1px solid #222;border-radius:10px;padding:12px;text-align:center}.stat b{font-size:20px;display:block}.stat small{color:#888}
+.userOnline{width:10px;height:10px;border-radius:50%;background:#00ff88;display:inline-block}.userOffline{width:10px;height:10px;border-radius:50%;background:#888;display:inline-block}
 </style>
 </head>
 <body>
-<div id="login" style="max-width:400px;margin:80px auto;padding:20px;text-align:center">
-<h1>Hit TV <span style="color:#0033cc">ADMIN V4</span></h1><p style="color:#888;margin:10px 0 20px">by Inno - All Fixes</p>
-<div class="card"><input type="password" id="pass" placeholder="Enter Password"><button class="btn-blue" onclick="doLogin()">LOGIN</button><p style="font-size:12px;color:#888;margin-top:10px">Password: Inno123</p></div>
-</div>
-<div id="main" style="display:none">
-<div class="top"><div><b>Hit TV ADMIN V4</b><br><span>● LIVE CONTROL • by Inno</span></div><button onclick="location.reload()" style="background:#fff;color:#000;padding:8px 14px">Logout</button></div>
-<div class="wrap">
+<div id="login"><div class="loginBox"><h1>Hit TV <span style="color:#1a2fd6">ADMIN</span></h1><p style="color:#aaa;margin:8px 0 14px">By Inno - Private Only</p><input type="password" id="pinInput" placeholder="Enter Admin PIN"><button class="btn" onclick="checkPin()">LOGIN</button><p style="font-size:11px;color:#888">Default PIN: <b style="color:#fff">1234</b></p></div></div>
+<div class="app">
+<div class="top"><b>Hit TV <span>ADMIN</span></b><button class="logout" onclick="logout()">Logout</button></div>
+<div class="liveCard"><small><span class="liveDot">● LIVE NOW</span> • <span id="clock">--:--:--</span> Kampala</small><h2 id="adminNow">-</h2><p id="adminDetail" style="color:#888;font-size:13px">Waiting...</p><div class="row" style="margin-top:10px"><button class="btn orange" onclick="doControl('next')">⏭ NEXT</button><button class="btn red" onclick="doControl('restart')">↻ RESTART LIVE</button></div></div>
+<div class="statGrid"><div class="stat"><b id="cLineup">0</b><small>Lineup</small></div><div class="stat"><b id="cUsers">0</b><small>Users</small></div><div class="stat"><b id="cRequests">0</b><small>Requests</small></div><div class="stat"><b id="cPrograms">0</b><small>Programs</small></div></div>
 <div class="tabs">
-<div class="tab active" onclick="show('dash',this)">📊 Dashboard</div>
-<div class="tab" onclick="show('live',this)">📺 Live</div>
-<div class="tab" onclick="show('lineup',this)">🎬 Lineup</div>
-<div class="tab" onclick="show('prog',this)">🗓️ Programs</div>
-<div class="tab" onclick="show('audio',this)">🎵 Audio</div>
-<div class="tab" onclick="show('notif',this)">🔔 Notify</div>
-<div class="tab" onclick="show('req',this)">⭐ Requests</div>
-<div class="tab" onclick="show('com',this)">💬 Comments</div>
-<div class="tab" onclick="show('ads',this)">📢 Ads</div>
-<div class="tab" onclick="show('others',this)">👥 Others</div>
+<div class="tab active" onclick="showTab('lineup',this)">📺 Lineup</div>
+<div class="tab" onclick="showTab('live',this)">🔴 Instant Live</div>
+<div class="tab" onclick="showTab('program',this)">📅 Programs</div>
+<div class="tab" onclick="showTab('users',this)">👥 Users</div>
+<div class="tab" onclick="showTab('audio',this)">🎵 Audio</div>
+<div class="tab" onclick="showTab('msg',this)">💬 Messages</div>
+<div class="tab" onclick="showTab('settings',this)">⚙️ Settings</div>
 </div>
-<div class="page active" id="p-dash">
-<div class="stat"><div><b id="cLineup">0</b><small>Lineup</small></div><div><b id="cProg">0</b><small>Programs</small></div><div><b id="cReq">0</b><small>Requests</small></div><div><b id="cUsers">0</b><small>Users</small></div></div>
-<div class="card"><h3>🔴 NOW PLAYING</h3><p>Title: <b id="nowT">-</b></p><p>Type: <span id="nowType">-</span> • Detail: <span id="nowDetail">-</span></p><p style="margin-top:10px"><span class="badge">LIVE FOR ALL VIEWERS</span></p></div>
-<div class="card"><h3>⚡ Quick Control</h3><div class="row"><button class="btn-green" onclick="controlAction('next')">⏭ NEXT VIDEO</button><button class="btn-grey" onclick="controlAction('restart')">🔄 RESTART LIVE</button></div><br><button class="btn-red" onclick="stopAll()">⏹ STOP ALL - REMOVE FROM PLAYING - Back to Lineup</button></div>
+
+<div class="page active" id="page-lineup">
+<div class="card"><h3>Add Video To Lineup</h3><input id="lTitle" placeholder="Title"><input id="lUrl" placeholder="YouTube / MP4 Link"><input id="lDetail" placeholder="Detail"><input id="lDur" type="number" placeholder="Duration seconds - e.g. 240"><input id="lOrder" type="number" placeholder="Order - 1,2,3"><button class="btn green" onclick="addLineup()">+ ADD TO LINEUP</button></div>
+<div class="card"><h3>Lineup List <span class="badge" id="lineupCount">0</span></h3><div id="lineupList">Loading...</div></div>
 </div>
-<div class="page" id="p-live">
-<div class="card"><h3>📺 Instant Live - FIXED: Auto Returns to Lineup</h3>
-<input id="ovTitle" placeholder="Title - e.g. BREAKING NEWS"><input id="ovUrl" placeholder="YouTube / MP4 Link"><input id="ovDetail" placeholder="Detail - e.g. INSTANT LIVE"><label style="font-size:12px;color:#888">How long to play? Seconds - After this it auto-stops and goes back to lineup</label><input id="ovDur" type="number" value="300" placeholder="300 = 5 min">
-<button class="btn-blue" onclick="startOverride()">▶ GO LIVE NOW FOR ALL VIEWERS</button><br><br>
-<button class="btn-red" style="width:100%" onclick="stopAll()">⏹ STOP ALL - REMOVE FROM PLAYING</button>
-<p style="font-size:12px;color:#00ff88;margin-top:8px">✅ Fixed: When time finishes, it deletes itself and viewer goes back to lineup song that was playing.</p></div>
-<div class="card"><h3>📷 Camera Live - FRONT CAMERA - FIXED</h3>
-<video id="camPreview" autoplay playsinline muted style="display:none"></video>
-<p id="camStatus" style="color:#888;font-size:12px;margin:8px 0">Camera is OFF</p>
-<div class="row"><button class="btn-green" onclick="startCameraReal()">📷 OPEN FRONT CAMERA + GO LIVE</button><button class="btn-red" onclick="stopCameraReal()">⏹ STOP CAMERA</button></div>
-<p style="font-size:12px;color:#888;margin-top:8px">It will ask permission, open your FRONT camera, show preview here, and tell viewers CAMERA LIVE. To show YOUR face to viewers live, viewer needs WebRTC fix - tell me and I will add it. For now viewer sees CAMERA LIVE screen + your camera is ON here.</p></div>
+
+<div class="page" id="page-live">
+<div class="card"><h3>🔴 Go Instant Live</h3><input id="oTitle" placeholder="Live Title"><input id="oUrl" placeholder="YouTube / MP4 Link"><button class="btn red" onclick="startOverride()">GO LIVE NOW</button><button class="btn orange" onclick="startCamera()">📷 CAMERA LIVE</button><button class="btn grey" onclick="stopOverride()">⏹ STOP LIVE</button></div>
+<div class="card"><h3>Current Override</h3><div id="overrideInfo">No override.</div></div>
 </div>
-<div class="page" id="p-lineup">
-<div class="card"><h3>➕ Add to Lineup</h3><input id="lTitle" placeholder="Title"><input id="lUrl" placeholder="YouTube / MP4 Link"><input id="lDur" type="number" placeholder="Duration seconds - e.g. 240"><input id="lOrder" type="number" placeholder="Order - 1 = first, 2 = second"><button class="btn-blue" onclick="addLineup()">+ ADD TO LINEUP</button></div>
-<div class="card"><h3>🎬 Current Lineup</h3><div id="lineupList">Loading...</div></div>
+
+<div class="page" id="page-program">
+<div class="card"><h3>📅 SET PROGRAM</h3>
+<input id="pTitle" placeholder="Program Title - e.g. Evening News">
+<input id="pUrl" placeholder="YouTube / MP4 Link">
+<label style="font-size:12px;color:#888">Start Time (Kampala)</label>
+<input id="pTime" type="time">
+<input id="pDur" type="number" placeholder="Duration seconds - 1800 = 30 min, 3600 = 1 hr">
+<input id="pDetail" placeholder="Detail - Host / Show">
+<button class="btn green" onclick="addProgram()">+ SET PROGRAM</button>
+<p style="font-size:11px;color:#888;margin-top:6px">✅ When program ends: 2 sec BLACK SCREEN → Program deletes itself → Back to Lineup where it was.</p>
 </div>
-<div class="page" id="p-prog">
-<div class="card"><h3>➕ Add Program - EAT / Kampala Time</h3><input id="pTitle" placeholder="Program Title"><input id="pUrl" placeholder="YouTube / MP4 Link"><label style="font-size:12px;color:#888">Start Time - EAT / Kampala</label><input id="pTime" type="time" value="19:30"><input id="pDur" type="number" placeholder="Duration seconds - e.g. 300"><button class="btn-blue" onclick="addProg()">+ SCHEDULE PROGRAM</button><p style="font-size:12px;color:#00ff88;margin-top:8px">✅ FIXED: When program finishes, viewer removes it in 2 sec and goes back to lineup song. Program stays for tomorrow unless you delete it.</p></div>
-<div class="card"><h3>🗓️ Scheduled Programs</h3><div id="progList">Loading...</div></div>
+<div class="card"><h3>⏰ Scheduled Programs <span class="badge" id="progCount">0</span></h3><div id="programList">Loading...</div></div>
+<div class="card"><h3>🔴 Now Playing Program</h3><div id="nowProg">No program playing.</div></div>
 </div>
-<div class="page" id="p-audio">
-<div class="card"><h3>➕ Add Audio - Link</h3><input id="aTitle" placeholder="Audio Title"><input id="aDetail" placeholder="Detail - e.g. New Song"><input id="aUrl" placeholder="MP3 / Audio Link"><button class="btn-blue" onclick="addAudio()">+ ADD AUDIO BY LINK</button></div>
-<div class="card"><h3>📁 Upload Audio From My Phone - NEW</h3><input id="upName" placeholder="Song Name - e.g. My New Song"><label style="font-size:12px;color:#888">Pick audio file from phone</label><input id="upFile" type="file" accept="audio/*"><button class="btn-orange" style="width:100%" onclick="uploadAudioFile()">📤 UPLOAD AUDIO FROM PHONE</button><p id="upStatus" style="font-size:12px;color:#00ff88;margin-top:8px"></p><p style="font-size:12px;color:#888">It uploads to Firebase Storage, then adds to Audio Streams. Viewers can download it.</p></div>
-<div class="card"><h3>🎵 Audio List</h3><div id="audioList">Loading...</div></div>
+
+<div class="page" id="page-users">
+<div class="card"><h3>👥 All Registered Users <span class="badge green" id="onlineCount">0 Online</span> <span class="badge" id="totalUsers">0 Total</span></h3>
+<input id="userSearch" placeholder="Search user by name / ID..." oninput="renderUsers()">
+<div id="userList">Loading users...</div>
+<button class="btn grey" onclick="clearOfflineUsers()">Clear Offline Users</button>
 </div>
-<div class="page" id="p-notif">
-<div class="card"><h3>🔔 Notification Bar</h3><input id="nText" placeholder="Message for all viewers"><div class="row"><button class="btn-green" onclick="setNotif(true)">SHOW</button><button class="btn-grey" onclick="setNotif(false)">HIDE</button></div></div>
-<div class="card"><h3>📰 Ticker Text - Works</h3><input id="tickText" placeholder="Welcome to Hit TV by Inno"><button class="btn-blue" onclick="saveTicker()">SAVE TICKER</button></div>
 </div>
-<div class="page" id="p-req"><div class="card"><h3>⭐ Artist Requests</h3><div id="reqList">Loading...</div></div></div>
-<div class="page" id="p-com"><div class="card"><h3>💬 Live Comments</h3><div id="comList">Loading...</div><br><button class="btn-red" onclick="clearCom()">Clear All Comments</button></div></div>
-<div class="page" id="p-ads"><div class="card"><h3>📢 Ads Control</h3><label style="font-size:12px;color:#888">Ads ON / OFF</label><select id="adsOn"><option value="on">ON - Show Ads</option><option value="off">OFF - Hide Ads</option></select><input id="adsTitle" placeholder="Ad Title"><input id="adsImg" placeholder="Ad Image Link"><input id="adsLink" placeholder="Ad Click Link"><input id="adsTime" type="number" placeholder="Show every X seconds - e.g. 300"><button class="btn-orange" onclick="saveAds()" style="width:100%">💾 SAVE ADS</button></div></div>
-<div class="page" id="p-others"><div class="card"><h3>👥 Others - ALL Users</h3><p style="font-size:12px;color:#888;margin-bottom:10px">Shows every viewer who opened Hit TV. Name + Last Seen (EAT). Viewer needs small presence code - I will send it when you say viewer fix. For now it shows users from Comments + Requests + Presence if available.</p><div id="usersList">Loading users...</div><br><button class="btn-grey" onclick="loadUsers()">🔄 Refresh Users</button></div></div>
-</div></div>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+
+<div class="page" id="page-audio">
+<div class="card"><h3>Add Audio</h3><input id="aTitle" placeholder="Audio Title"><input id="aUrl" placeholder="MP3 Link"><input id="aDetail" placeholder="Detail"><button class="btn green" onclick="addAudio()">+ ADD AUDIO</button></div>
+<div class="card"><h3>Audio List</h3><div id="audioList">Loading...</div></div>
+</div>
+
+<div class="page" id="page-msg">
+<div class="card"><h3>Live Comments</h3><div id="commentList">Loading...</div><button class="btn grey" onclick="clearComments()">Clear Comments</button></div>
+<div class="card"><h3>Artist Requests</h3><div id="requestList">Loading...</div><button class="btn grey" onclick="clearRequests()">Clear Requests</button></div>
+</div>
+
+<div class="page" id="page-settings">
+<div class="card"><h3>📢 Ticker</h3><input id="tickerInput" placeholder="Welcome to Hit TV..."><button class="btn" onclick="saveTicker()">SAVE TICKER</button><button class="btn grey" onclick="clearTicker()">Clear</button></div>
+<div class="card"><h3>🔔 Notification</h3><input id="notifInput" placeholder="Breaking..."><button class="btn orange" onclick="saveNotif()">SEND NOTIFICATION</button><button class="btn grey" onclick="clearNotif()">Clear</button></div>
+</div>
+ </div>
+ <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
 <script>
-const firebaseConfig={apiKey:"AIzaSyBT9bXCGb6WgriW1wodo6IeRKOUQ5jdCes",authDomain:"hit-tv-app-40fb9.firebaseapp.com",databaseURL:"https://hit-tv-app-40fb9-default-rtdb.firebaseio.com",projectId:"hit-tv-app-40fb9",storageBucket:"hit-tv-app-40fb9.firebasestorage.app",messagingSenderId:"740828744097",appId:"1:740828744097:web:49104b3522d02de64ce3e0"};
-firebase.initializeApp(firebaseConfig);const db=firebase.database();const storage=firebase.storage();
-let camStream=null,ovTimer=null;
-function doLogin(){if(document.getElementById('pass').value==="Inno123"){document.getElementById('login').style.display='none';document.getElementById('main').style.display='block';loadAll();ensureLiveState();}else alert('Wrong Password');}
-function show(id,el){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));document.getElementById('p-'+id).classList.add('active');el.classList.add('active');}
-function ensureLiveState(){db.ref('liveState').once('value',s=>{if(!s.val()||!s.val().startedAt){db.ref('liveState').set({startedAt:Date.now()});}});}
-function nowKampalaAdmin(){return new Date(new Date().toLocaleString("en-US",{timeZone:"Africa/Kampala"}));}
-function todayEATAdmin(){let n=nowKampalaAdmin();return n.getFullYear()+"-"+(n.getMonth()+1)+"-"+n.getDate();}
-function loadAll(){
- db.ref('lineup').on('value',s=>{let d=s.val()||{};document.getElementById('cLineup').innerText=Object.keys(d).length;let arr=Object.keys(d).map(k=>({...d[k],_k:k})).sort((a,b)=>(a.order||0)-(b.order||0));let h='';arr.forEach(v=>{h+=`<div class="item"><b>${v.order||0}. ${v.title||''}</b><p>${v.url||''} • ${v.duration||240}s</p><div class="row"><button class="btn-green" onclick="playLineupNow('${v._k}')">Play Now</button><button class="btn-red" onclick="db.ref('lineup/${v._k}').remove()">Delete</button></div></div>`;});document.getElementById('lineupList').innerHTML=h||'Empty';});
- db.ref('programs').on('value',s=>{let d=s.val()||{};document.getElementById('cProg').innerText=Object.keys(d).length;let h='';Object.keys(d).forEach(k=>{let v=d[k];h+=`<div class="item"><b>${v.title} - ⏰ ${v.startTime} EAT</b><p>${v.url}<br>Duration: ${v.duration}s • Last Played: ${v.lastPlayed||'Not yet'}</p><div class="row"><button class="btn-grey" onclick="resetProg('${k}')">Reset - Play Today Again</button><button class="btn-red" onclick="db.ref('programs/${k}').remove()">Delete</button></div></div>`;});document.getElementById('progList').innerHTML=h||'No programs';});
- db.ref('audioStreams').on('value',s=>{let d=s.val()||{};let h='';Object.keys(d).forEach(k=>{let v=d[k];h+=`<div class="item"><b>${v.title}</b><p>${v.detail||''}<br>${v.url}</p><button class="btn-red" onclick="db.ref('audioStreams/${k}').remove()">Delete</button></div>`;});document.getElementById('audioList').innerHTML=h||'No audios';});
- db.ref('requests').on('value',s=>{let d=s.val()||{};document.getElementById('cReq').innerText=Object.keys(d).length;let h='';Object.keys(d).reverse().forEach(k=>{let v=d[k];h+=`<div class="item"><b>${v.name||''} - ${v.song||''}</b><p>Phone: ${v.phone||''}<br>Link: ${v.link||''}</p><div class="row"><button class="btn-green" onclick="approveReq('${k}')">Approve to Lineup</button><button class="btn-red" onclick="db.ref('requests/${k}').remove()">Delete</button></div></div>`;});document.getElementById('reqList').innerHTML=h||'No requests'; loadUsers();});
- db.ref('comments').on('value',s=>{let d=s.val()||{};let h='';Object.keys(d).reverse().forEach(k=>{h+=`<div class="item"><p>${d[k].text||''}</p><button class="btn-red" onclick="db.ref('comments/${k}').remove()">Delete</button></div>`;});document.getElementById('comList').innerHTML=h||'No comments';});
- db.ref('nowPlaying').on('value',s=>{let v=s.val()||{};document.getElementById('nowT').innerText=v.title||'-';document.getElementById('nowType').innerText=v.type||'-';document.getElementById('nowDetail').innerText=v.detail||'-';});
- db.ref('ticker').on('value',s=>{let v=s.val();if(v&&v.text)document.getElementById('tickText').value=v.text;});
- db.ref('notification').on('value',s=>{let v=s.val();if(v&&v.text)document.getElementById('nText').value=v.text;});
- db.ref('presence').on('value',s=>{let d=s.val()||{};document.getElementById('cUsers').innerText=Object.keys(d).length; loadUsers();});
- db.ref('ads').on('value',s=>{let v=s.val();if(v){document.getElementById('adsOn').value=v.on||'on';document.getElementById('adsTitle').value=v.title||'';document.getElementById('adsImg').value=v.image||'';document.getElementById('adsLink').value=v.link||'';document.getElementById('adsTime').value=v.interval||'';}});
+const ADMIN_PIN = "1234";
+const firebaseConfig = {
+  apiKey: "AIzaSyBT9bXCGb6WgriW1wodo6IeRKOUQ5jdCes",
+  authDomain: "hit-tv-app-40fb9.firebaseapp.com",
+  databaseURL: "https://hit-tv-app-40fb9-default-rtdb.firebaseio.com",
+  projectId: "hit-tv-app-40fb9",
+  storageBucket: "hit-tv-app-40fb9.firebasestorage.app",
+  messagingSenderId: "740828744097",
+  appId: "1:740828744097:web:49104b3522d02de64ce3e0"
+};
+firebase.initializeApp(firebaseConfig);const db=firebase.database();
+function checkPin(){ if(document.getElementById('pinInput').value===ADMIN_PIN){ document.getElementById('login').style.display='none'; localStorage.setItem('hitAdmin','yes'); } else alert('Wrong PIN!'); }
+function logout(){ localStorage.removeItem('hitAdmin'); location.reload(); }
+if(localStorage.getItem('hitAdmin')==='yes') document.getElementById('login').style.display='none';
+function showTab(id,el){ document.querySelectorAll('.page').forEach(p=>p.classList.remove('active')); document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); document.getElementById('page-'+id).classList.add('active'); el.classList.add('active'); }
+function esc(s){ return String(s||'').replace(/'/g,"").replace(/"/g,''); }
+function doControl(a){ db.ref('control').set({action:a}); alert(a==='next'?'Next...':'Restarted!'); }
+function addLineup(){ let t=document.getElementById('lTitle').value.trim(),u=document.getElementById('lUrl').value.trim(); if(!t||!u) return alert('Fill Title + Link'); db.ref('lineup').push({title:t,url:u,detail:document.getElementById('lDetail').value.trim(),duration:parseInt(document.getElementById('lDur').value)||240,order:parseInt(document.getElementById('lOrder').value)||0}); alert('Added!'); }
+function delLineup(k){ if(confirm('Delete?')) db.ref('lineup/'+k).remove(); }
+function startOverride(){ let t=document.getElementById('oTitle').value.trim(),u=document.getElementById('oUrl').value.trim(); if(!t||!u) return alert('Fill Title + Link'); db.ref('liveOverride').set({title:t,url:u,detail:'INSTANT LIVE',type:'video',startedAt:Date.now()}); alert('YOU ARE LIVE!'); }
+function startCamera(){ db.ref('liveOverride').set({title:'CAMERA LIVE - Hit TV by Inno',type:'camera',startedAt:Date.now()}); alert('CAMERA LIVE'); }
+function stopOverride(){ db.ref('liveOverride').remove(); alert('Back to Lineup'); }
+
+// --- SET PROGRAM ---
+function addProgram(){
+  let t=document.getElementById('pTitle').value.trim(),u=document.getElementById('pUrl').value.trim(),tm=document.getElementById('pTime').value;
+  if(!t||!u||!tm) return alert('Fill Title + Link + Time');
+  let dur=parseInt(document.getElementById('pDur').value)||1800;
+  db.ref('programs').push({title:t,url:u,startTime:tm,duration:dur,detail:document.getElementById('pDetail').value.trim(),createdAt:Date.now(),autoRemove:true});
+  alert('Program SET for '+tm+' - Will auto-remove after ending + 2 sec black screen');
+  ['pTitle','pUrl','pTime','pDur','pDetail'].forEach(i=>document.getElementById(i).value='');
 }
-function loadUsers(){
- db.ref('presence').once('value',s=>{
-  let p=s.val()||{}; let h='';
-  Object.keys(p).forEach(k=>{let u=p[k];let date=new Date(u.lastSeen||Date.now());let eat=date.toLocaleString('en-GB',{timeZone:'Africa/Kampala'});h+=`<div class="item"><b>👤 ${u.name||'Viewer '+k.slice(0,6)}</b><p>Last Seen (EAT): ${eat}<br>ID: ${k}</p></div>`;});
-  db.ref('requests').once('value',rs=>{let r=rs.val()||{};Object.keys(r).forEach(k=>{let v=r[k];h+=`<div class="item"><b>⭐ ${v.name||''} (From Request)</b><p>Song: ${v.song||''} • Phone: ${v.phone||''}</p></div>`;});document.getElementById('usersList').innerHTML=h||'No users yet - Viewers need to open app with new viewer code for presence to show.';});
- });
+function delProgram(k){ if(confirm('Delete program?')) db.ref('programs/'+k).remove(); }
+function stopProgramNow(k){ if(confirm('Stop this program now? It will go back to lineup.')){ db.ref('control').set({action:'stopProgram',programKey:k}); } }
+
+function addAudio(){ let t=document.getElementById('aTitle').value.trim(),u=document.getElementById('aUrl').value.trim(); if(!t||!u) return alert('Fill Title + Link'); db.ref('audioStreams').push({title:t,url:u,detail:document.getElementById('aDetail').value.trim()}); alert('Audio Added'); }
+function delAudio(k){ if(confirm('Delete?')) db.ref('audioStreams/'+k).remove(); }
+function clearComments(){ if(confirm('Clear?')) db.ref('comments').remove(); }
+function clearRequests(){ if(confirm('Clear?')) db.ref('requests').remove(); }
+function saveTicker(){ let v=document.getElementById('tickerInput').value.trim(); if(v) db.ref('ticker').set({text:v}); }
+function clearTicker(){ db.ref('ticker').remove(); }
+function saveNotif(){ let v=document.getElementById('notifInput').value.trim(); if(v) db.ref('notification').set({text:v}); }
+function clearNotif(){ db.ref('notification').remove(); }
+
+// --- USERS + LAST SEEN ---
+let allUsers = {};
+function renderUsers(){
+  let q=(document.getElementById('userSearch').value||'').toLowerCase();
+  let keys=Object.keys(allUsers).sort((a,b)=>(allUsers[b].lastSeen||0)-(allUsers[a].lastSeen||0));
+  let online=keys.filter(k=>allUsers[k].online).length;
+  document.getElementById('onlineCount').innerText=online+' Online';
+  document.getElementById('totalUsers').innerText=keys.length+' Total';
+  document.getElementById('cUsers').innerText=keys.length;
+  let html='';
+  keys.forEach(k=>{
+    let u=allUsers[k];
+    if(q && !( (u.name||'').toLowerCase().includes(q) || k.toLowerCase().includes(q) )) return;
+    let ago = u.lastSeen ? Math.floor((Date.now()-u.lastSeen)/60000) + ' min ago' : 'Unknown';
+    if(u.lastSeen && (Date.now()-u.lastSeen)<60000) ago='Just now';
+    html+=`<div class="item"><div><b>${u.online?'<span class="userOnline"></span>':'<span class="userOffline"></span>'} ${esc(u.name||'Viewer')}</b><p>ID: ${k.slice(0,18)}...<br>Last Seen: ${esc(u.lastSeenText||ago)} • ${ago}</p></div><button class="btn small red" onclick="removeUser('${k}')">Remove</button></div>`;
+  });
+  document.getElementById('userList').innerHTML=html||'No users yet. Users appear when they open Viewers app.';
 }
-function addLineup(){let t=document.getElementById('lTitle').value,u=document.getElementById('lUrl').value,d=parseInt(document.getElementById('lDur').value)||240,o=parseInt(document.getElementById('lOrder').value)||0;if(!t||!u)return alert('Fill Title + Link');db.ref('lineup').push({title:t,url:u,duration:d,order:o});alert('Added!');}
-function playLineupNow(k){db.ref('lineup/'+k).once('value',s=>{let v=s.val();let dur=parseInt(v.duration)||240;db.ref('liveOverride').set({title:v.title,detail:'INSTANT LIVE',url:v.url,startedAt:Date.now(),duration:dur,endsAt:Date.now()+dur*1000});alert('Playing NOW! Will auto-return after '+dur+'s');});}
-function startOverride(){let t=document.getElementById('ovTitle').value,u=document.getElementById('ovUrl').value,det=document.getElementById('ovDetail').value,dur=parseInt(document.getElementById('ovDur').value)||300;if(!u)return alert('Paste Link');if(ovTimer)clearTimeout(ovTimer);db.ref('liveOverride').set({title:t||'LIVE',detail:det||'INSTANT LIVE',url:u,startedAt:Date.now(),duration:dur,endsAt:Date.now()+dur*1000});ovTimer=setTimeout(()=>{stopAll();},dur*1000);alert('LIVE STARTED! Will auto-stop in '+dur+'s and go back to lineup.');}
-function stopAll(){if(ovTimer)clearTimeout(ovTimer);stopCameraOnly();db.ref('liveOverride').remove();alert('STOPPED ALL - Removed from playing - Back to Lineup song');}
-function stopCameraOnly(){if(camStream){camStream.getTracks().forEach(t=>t.stop());camStream=null;}let v=document.getElementById('camPreview');if(v)v.style.display='none';let st=document.getElementById('camStatus');if(st)st.innerText='Camera is OFF';}
-function startCamera(){db.ref('liveOverride').set({type:'camera',startedAt:Date.now()});}
-async function startCameraReal(){
- try{
-  camStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'},audio:true});
-  let v=document.getElementById('camPreview');v.style.display='block';v.srcObject=camStream;
-  document.getElementById('camStatus').innerText='✅ FRONT CAMERA ON - You are LIVE';
-  db.ref('liveOverride').set({type:'camera',startedAt:Date.now()});
-  alert('FRONT CAMERA OPEN + GO LIVE!');
- }catch(e){alert('Camera failed: '+e.message+' - Allow camera permission in browser');}
-}
-function stopCameraReal(){stopCameraOnly();db.ref('liveOverride').remove();}
-function addProg(){let t=document.getElementById('pTitle').value,u=document.getElementById('pUrl').value,tm=document.getElementById('pTime').value,d=parseInt(document.getElementById('pDur').value)||300;if(!t||!u||!tm)return alert('Fill Title + Link + Time');db.ref('programs').push({title:t,url:u,startTime:tm,duration:d,lastPlayed:""});alert('Program Scheduled for '+tm+' EAT! Will play every day.');}
-function resetProg(k){db.ref('programs/'+k).update({lastPlayed:""});alert('Reset! Can play again today.');}
-function addAudio(){let t=document.getElementById('aTitle').value,det=document.getElementById('aDetail').value,u=document.getElementById('aUrl').value;if(!t||!u)return alert('Fill Title + Link');db.ref('audioStreams').push({title:t,detail:det,url:u});alert('Audio Added!');}
-async function uploadAudioFile(){
- let f=document.getElementById('upFile').files[0];let name=document.getElementById('upName').value.trim()||(f?f.name:'Song');
- if(!f)return alert('Pick a file from your phone first');
- document.getElementById('upStatus').innerText='Uploading... wait...';
- try{
-  let ref=storage.ref('audios/'+Date.now()+'_'+f.name);
-  await ref.put(f); let url=await ref.getDownloadURL();
-  db.ref('audioStreams').push({title:name,detail:'Uploaded from Admin Phone',url:url});
-  document.getElementById('upStatus').innerText='✅ Uploaded! '+name+' added to Audio Streams.';
-  document.getElementById('upFile').value='';document.getElementById('upName').value='';
- }catch(e){document.getElementById('upStatus').innerText='Upload failed: '+e.message;}
-}
-function setNotif(on){let txt=document.getElementById('nText').value;if(on){db.ref('notification').set({text:txt});}else{db.ref('notification').remove();}alert(on?'Notification SHOWN':'Notification HIDDEN');}
-function saveTicker(){db.ref('ticker').set({text:document.getElementById('tickText').value});alert('Ticker Saved!');}
-function controlAction(a){db.ref('control').set({action:a,at:Date.now()});alert(a==='next'?'Next Video!':'Restarting Live...');setTimeout(()=>{db.ref('control').remove();},2000);}
-function approveReq(k){db.ref('requests/'+k).once('value',s=>{let v=s.val();if(v.link)db.ref('lineup').push({title:(v.name||'')+' - '+(v.song||''),url:v.link,duration:240,order:99});alert('Approved!');});}
-function clearCom(){if(confirm('Clear all comments?'))db.ref('comments').remove();}
-function saveAds(){db.ref('ads').set({on:document.getElementById('adsOn').value,title:document.getElementById('adsTitle').value,image:document.getElementById('adsImg').value,link:document.getElementById('adsLink').value,interval:parseInt(document.getElementById('adsTime').value)||300});alert('Ads Saved!');}
-// AUTO-CLEAN: If Admin was closed, clean expired Instant Live + expired Programs when Admin re-opens
-setInterval(()=>{
- db.ref('liveOverride').once('value',s=>{let d=s.val();if(d&&d.endsAt&&Date.now()>d.endsAt){db.ref('liveOverride').remove();}});
- db.ref('programs').once('value',s=>{let progs=s.val()||{};let today=todayEATAdmin();let now=nowKampalaAdmin();let nowMin=now.getHours()*60+now.getMinutes();Object.keys(progs).forEach(k=>{let p=progs[k];if(!p||!p.startTime)return;if(p.lastPlayed===today)return;let a=p.startTime.split(":");let startMin=parseInt(a[0])*60+parseInt(a[1]);let dur=parseInt(p.duration)||300;let passed=(nowMin-startMin)*60+now.getSeconds();if(passed>=dur){db.ref('programs/'+k).update({lastPlayed:today});}});});
-},5000);
+function removeUser(k){ if(confirm('Remove this user?')) db.ref('users/'+k).remove(); }
+function clearOfflineUsers(){ if(!confirm('Delete all OFFLINE users?')) return; Object.keys(allUsers).forEach(k=>{ if(!allUsers[k].online) db.ref('users/'+k).remove(); }); }
+
+// LISTENERS
+db.ref('nowPlaying').on('value',s=>{ let d=s.val(); if(d){ document.getElementById('adminNow').innerText=d.title; document.getElementById('adminDetail').innerText=(d.type||'')+' • '+new Date(d.startedAt).toLocaleTimeString(); if(d.type==='PROGRAM') document.getElementById('nowProg').innerHTML=`<b>${esc(d.title)}</b><p>PROGRAM PLAYING • Started ${new Date(d.startedAt).toLocaleTimeString()}</p>`; else document.getElementById('nowProg').innerHTML='No program playing. Playing lineup.'; }});
+db.ref('lineup').on('value',s=>{ let v=s.val()||{}; let keys=Object.keys(v); document.getElementById('cLineup').innerText=keys.length; document.getElementById('lineupCount').innerText=keys.length; let html=''; keys.sort((a,b)=>(v[a].order||0)-(v[b].order||0)).forEach(k=>{ let it=v[k]; html+=`<div class="item"><div><b>${esc(it.title)}</b><p>Order ${it.order||0} • ${it.duration||240}s</p></div><button class="btn small red" onclick="delLineup('${k}')">Delete</button></div>`; }); document.getElementById('lineupList').innerHTML=html||'No videos.'; });
+db.ref('programs').on('value',s=>{ let v=s.val()||{}; let keys=Object.keys(v); document.getElementById('cPrograms').innerText=keys.length; document.getElementById('progCount').innerText=keys.length; let html=''; keys.forEach(k=>{ let p=v[k]; html+=`<div class="item"><div><b>${esc(p.title)}</b><p>⏰ ${p.startTime} • ${p.duration}s • ${esc(p.detail||'')}</p></div><div><button class="btn small orange" onclick="stopProgramNow('${k}')">Stop</button> <button class="btn small red" onclick="delProgram('${k}')">Delete</button></div></div>`; }); document.getElementById('programList').innerHTML=html||'No programs.'; });
+db.ref('audioStreams').on('value',s=>{ let v=s.val()||{}; let html=''; Object.keys(v).forEach(k=>{ let a=v[k]; html+=`<div class="item"><div><b>${esc(a.title)}</b></div><button class="btn small red" onclick="delAudio('${k}')">Delete</button></div>`; }); document.getElementById('audioList').innerHTML=html||'No audios.'; });
+db.ref('comments').on('value',s=>{ let v=s.val()||{}; let html=''; Object.keys(v).reverse().forEach(k=>{ html+=`<div class="item"><div><b>${esc(v[k].text)}</b><p>${new Date(v[k].time).toLocaleString()}</p></div></div>`; }); document.getElementById('commentList').innerHTML=html||'No comments.'; });
+db.ref('requests').on('value',s=>{ let v=s.val()||{}; let keys=Object.keys(v); document.getElementById('cRequests').innerText=keys.length; let html=''; keys.reverse().forEach(k=>{ let r=v[k]; html+=`<div class="item"><div><b>${esc(r.name)} - ${esc(r.song)}</b><p>${esc(r.phone||'')} • ${esc(r.link||'')}</p></div></div>`; }); document.getElementById('requestList').innerHTML=html||'No requests.'; });
+db.ref('liveOverride').on('value',s=>{ let d=s.val(); document.getElementById('overrideInfo').innerHTML=d?`<b>${esc(d.title)}</b><p>${d.type}</p>`:'No override.'; });
+db.ref('users').on('value',s=>{ allUsers=s.val()||{}; renderUsers(); });
+setInterval(()=>{ let d=new Date(new Date().toLocaleString("en-US",{timeZone:"Africa/Kampala"})); document.getElementById('clock').innerText=d.toLocaleTimeString(); },1000);
 </script>
 </body>
 </html>
